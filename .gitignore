@@ -1,5 +1,10 @@
+# 忽略quickjs-ng仓库库
 bin/
 bin
+
+# 忽略输出文件
 out/
 
+# 忽略临时文件
 *.json
+*.c
