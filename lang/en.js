@@ -1,5 +1,6 @@
 export default {
     init: {
+        argErr: 'Parameter conflict detected, exiting program',
         childProcExitErr: 'Child process exited with an error',
         inrunning: 'An instance is already running, exiting program',
         childProcessErr: 'Initialization error: one or more child processes failed to start',
@@ -9,22 +10,28 @@ export default {
         readErr: 'Initialization Error: Unable to read config file',
         parseErr: 'Initialization Error: The configuration file is non-compliant',
     },
+    public: {
+        intervalWarn: 'Initialization warning: Monitoring interval is less than 1000ms which may cause performance issues',
+        isDirErr: 'Data file path points to a directory instead of a file!',
+        mktempErr: 'Unable to create temporary file!',
+        symlinkErr: 'Unable to create symbolic link!',
+        writeFileErr: 'Unable to write data file!',
+        removeErr: 'Unable to remove old data file!',
+        startTimmerErr: 'Unable to start timer!',
+    },
     dirCheck: {
         illegalPath: 'dirCheck(): Illegal path segment detected! Function returns early.',
         errNewDir: 'dirCheck(): Unable to create directory',
         fileExist: 'dirCheck(): Path already exists and is not a directory! Function returns early. Path:',
     },
-    SysMonitor:{
-        initSuccess: 'SysMonitor started successfully',
-        initErr: 'SysMonitor(): Initialization error: Data directory check failed - Code',
-        removeErr: 'SysMonitor(): Unable to remove old data file!',
-        isDirErr: 'SysMonitor(): Data file path points to a directory instead of a file!',
-        mktempErr: 'SysMonitor(): Unable to create temporary file!',
-        symlinkErr: 'SysMonitor(): Unable to create symbolic link!',
-        startTimmerErr: 'SysMonitor(): Unable to start timer!',
-        removeErr: 'SysMonitor(): Unable to remove temporary data file - Code',
+    SysMonitor: {
+        initSuccess: 'System Monitor started successfully - Pid:',
         readInfoErr: 'SysMonitor(): Unable to read system status information!',
         errorCount: 'SysMonitor(): More than 10 consecutive failures, automatically terminating system monitoring function!',
-        writeFileErr: 'SysMonitor(): Unable to write data file!',
-    }
+    },
+    SvrControl: {
+        initSuccess: 'Service Control started successfully - Pid:',
+        readInfoErr: 'SvrControl(): Unable to read system service status information!',
+        errorCount: 'SvrControl(): More than 10 consecutive failures, automatically terminating service status monitoring function, Service Control module enters restricted mode!',
+    },
 }

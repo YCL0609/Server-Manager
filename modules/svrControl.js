@@ -1,0 +1,156 @@
+import * as os from 'qjs:os';
+import * as std from 'qjs:std';
+import { writeFile } from '../lib/writeFile.js';
+import { dirCheck } from '../lib/dirCheck.js';
+import { lang, console, config } from '../lib/init.js';
+import { exec } from '../lib/runCmd.js';
+
+export class SvrControl {
+    #enabled = false;
+    #dataPath = null;
+    #services = [];
+    #errorCount = 0;
+    #tmpFile = null;
+    #interval = -1;
+    #timmer = null;
+
+    init() {
+        // 加载配置
+        this.#enabled = config.srvControl?.enable ?? false;
+        this.#dataPath = config.srvControl?.dataPath ?? null;
+        this.#services = config.srvControl?.services ?? [];
+        this.#interval = config.srvControl?.interval ?? 1000;
+
+        // 监听间隔检查
+        if (this.#interval < 1000) console.warn(lang.SysMonitor.intervalWarn);
+        if (this.#interval > 3600000) this.#interval = 3600000; // 最大间隔为1小时
+        if (this.#interval < 100) this.#interval = 100; // 最小间隔为100ms
+        if (!this.#enabled || !this.#dataPath || this.#services.length === 0) return 0;
+
+        // 数据目录检查
+        const errno = dirCheck(this.#dataPath);
+        if (errno !== 0) {
+            console.error('SvrControl():', lang.public.initErr, errno);
+            return errno;
+        }
+
+        // 清理残留数据
+        const [oldFiles, readErr] = os.stat(this.#dataPath + '/sysStatus.json');
+        if (readErr === 0) {
+            if ((oldFiles.mode & os.S_IFMT) === os.S_IFDIR) {
+                console.error('SvrControl():', lang.public.isDirErr);
+                return 21; // EISDIR
+            }
+            if (os.remove(this.#dataPath + '/status.json') !== 0) {
+                console.error('SvrControl():', lang.public.removeErr);
+                return 5; // EIO
+            }
+        }
+
+        // 获取临时文件名
+        const tmpFileName = exec('mktemp -d /dev/shm/svrControl-XXXXXXXXXXXX');
+        if (!tmpFileName) {
+            console.error('SvrControl():', lang.public.mktempErr);
+            return 5; // EIO
+        } else {
+            this.#tmpFile = tmpFileName.trim();
+        }
+
+        // 创建符号链接
+        if (os.symlink(this.#tmpFile + '/svrStatus.json', this.#dataPath + '/svrStatus.json') !== 0) {
+            console.error('SvrControl():', lang.public.symlinkErr);
+            return 18; // EXDEV
+        }
+
+        // 注册信号处理函数
+        os.signal(os.SIGINT, () => this.#cleanup());
+        os.signal(os.SIGTERM, () => this.#cleanup());
+        os.signal(os.SIGQUIT, () => this.#cleanup());
+
+        // 启动定时器
+        this.#TimmerHandler();
+
+        console.log(lang.SysMonitor.initSuccess, os.getpid());
+        return 0;
+
+    }
+    /**
+     * 内部函数：启动定时器
+     * @returns {number} - 0 为成功，其他为错误代码
+     */
+    #startTimmer() {
+        if (!this.#enabled || !this.#dataPath || this.#services.length === 0) return 0;
+        const fd = os.setTimeout(() => this.#TimmerHandler(), this.#interval);
+        if (!fd) return 4; // EINTR
+        this.#timmer = fd;
+        return 0;
+    }
+
+    /**
+     * 内部函数：定时器处理函数
+     */
+    #TimmerHandler() {
+        if (!this.#enabled || !this.#dataPath || this.#services.length === 0) return;
+
+        // 获取服务状态
+        const svStatusRaw = exec('SYSTEMD_COLORS=0 systemctl list-units --type=service --no-legend --plain');
+        // 解析服务状态
+        const svStatus = svStatusRaw.trim().split('\n').reduce((acc, line) => {
+            const parts = line.trim().split(/\s+/);
+            if (parts.length >= 5) {
+                const [unit, load, active, sub, ...descParts] = parts;
+                acc[unit] = {
+                    load: load,
+                    active: active,
+                    sub: sub,
+                    description: descParts.join(' ') // 将剩余部分重新组合成描述
+                };
+            }
+            return acc;
+        }, {});
+
+        // 存储服务状态
+        const data = {
+            timestamp: Date.now(),
+            services: this.#services.map(srv => ({
+                name: srv,
+                status: svStatus[srv] || {}
+            }))
+        }
+
+        // 写入临时文件
+        if (!writeFile(this.#tmpFile + '/svrStatus.json.tmp', JSON.stringify(data), 'w')) {
+            console.warn(lang.SysMonitor.writeFileErr);
+            this.#errorCount++;
+            if (this.#errorCount > 10) {
+                console.error(lang.SysMonitor.errorCount);
+                this.#cleanup();
+                std.exit(5); // EIO
+            }
+        } else {
+            this.#errorCount = 0; // 重置错误计数
+        }
+        // 替换文件
+        os.rename(this.#tmpFile + '/svrStatus.json.tmp', this.#tmpFile + '/svrStatus.json');
+
+        // 启动定时器
+        const startErr = this.#startTimmer();
+        if (startErr !== 0) {
+            console.error(lang.SysMonitor.startTimmerErr);
+            this.#cleanup();
+            std.exit(startErr);
+        }
+    }
+
+    /**
+     * 内湖函数: 清理残留文件
+     */
+    #cleanup() {
+        this.#enabled = false;
+        this.#interval = -1;
+        if (this.#timmer) os.clearTimeout(this.#timmer);
+        os.remove(this.#tmpFile + '/svrStatus.json');
+        os.remove(this.#tmpFile + '/svrStatus.json.tmp');
+        os.remove(this.#dataPath + '/svrStatus.json');
+    }
+}

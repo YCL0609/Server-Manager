@@ -1,2 +1,4 @@
 #!/bin/sh
-./bin/qjs --std -m main.js $@
+./build.sh
+echo ------------------------------
+./out/server-manager $@

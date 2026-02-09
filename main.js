@@ -3,29 +3,46 @@ import * as std from 'qjs:std';
 import { writeFile } from './lib/writeFile.js';
 import { lang, console } from './lib/init.js';
 import { SysMonitor } from './modules/sysMonitor.js';
+import { SvrControl } from './modules/svrControl.js';
 
-// 获取锁文件
-if (!getLockFile()) {
-    console.log(lang.init.inrunning);
-    std.exit(0);
-}
+// 命令行参数
+const sysmonIndex = scriptArgs.indexOf('--sysmon');
+const svrctrlIndex = scriptArgs.indexOf('--svrctrl');
 
+// 子进程参数列表
 const tasks = [
     [...scriptArgs, '--sysmon'],
+    [...scriptArgs, '--svrctrl'],
 ];
 
-const sysmonIndex = scriptArgs.indexOf('--sysmon');
-if (sysmonIndex !== -1) {
+if (sysmonIndex !== -1 && svrctrlIndex !== -1) {
+    // 参数错误
+    console.error(lang.init.argErr);
+    std.exit(1);
+} else if (sysmonIndex !== -1 && svrctrlIndex === -1) {
+    // 系统监控模块
     const sysMonitor = new SysMonitor();
     const initErr = sysMonitor.init();
     if (initErr !== 0) {
         console.error(lang.SysMonitor.initErr, initErr);
         std.exit(initErr);
     }
+} else if (svrctrlIndex !== -1 && sysmonIndex === -1) {
+    // 服务器控制模块
+    const srvControl = new SvrControl();
+    const initErr = srvControl.init();
+    if (initErr !== 0) {
+        console.error(lang.SvrControl.initErr, initErr);
+        std.exit(initErr);
+    }
 } else {
+    // 启动主进程
+    if (!getLockFile()) { // 尝试获取锁文件
+        console.log(lang.init.inrunning);
+        std.exit(0);
+    }
+    // 启动所有子进程
     let count = 0;
-
-    // 启动子进程
     tasks.forEach(args => {
         if (os.exec(args, { block: false }) >= 0) count++;
     });
@@ -39,9 +56,12 @@ if (sysmonIndex !== -1) {
     }
 }
 
-
+/**
+ * 尝试获取锁文件
+ * @returns {boolean} - 是否取得锁文件 
+ */
 function getLockFile() {
-    const lockFilePath = '/var/lock/server-manager.lock';
+    const lockFilePath = '/tmp/server-manager.lock';
 
     const oldFile = std.loadFile(lockFilePath);
     if (oldFile === null) {
