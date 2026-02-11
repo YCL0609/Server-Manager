@@ -11,6 +11,7 @@ export default {
         parseErr: 'Initialization Error: The configuration file is non-compliant',
     },
     public: {
+        initErr: 'Initialization Error - Code:',
         intervalWarn: 'Initialization warning: Monitoring interval is less than 1000ms which may cause performance issues',
         isDirErr: 'Data file path points to a directory instead of a file!',
         mktempErr: 'Unable to create temporary file!',
@@ -32,6 +33,10 @@ export default {
     SvrControl: {
         initSuccess: 'Service Control started successfully - Pid:',
         readInfoErr: 'SvrControl(): Unable to read system service status information!',
+        readCtrlFileErr: 'SvrControl(): Unable to read service control file!',
+        chmodWarn: 'SvrControl(): Unable to set control file permissions to 600, which may pose a security risk!',
+        switchErr: 'SvrControl(): Failed to attempt to switch service status!',
+        switchSuccess: 'SvrControl(): Service status switched successfully!',
         errorCount: 'SvrControl(): More than 10 consecutive failures, automatically terminating service status monitoring function, Service Control module enters restricted mode!',
     },
 }

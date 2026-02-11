@@ -11,6 +11,7 @@ export default {
         parseErr: '初始化错误: 配置文件不合规',
     },
     public: {
+        initErr: '初始化错误 - Code:',
         intervalWarn: '初始化警告: 监控间隔小于1000ms可能存在性能问题',
         isDirErr: '数据文件路径指向一个目录而非文件!',
         mktempErr: '无法创建临时文件!',
@@ -32,6 +33,10 @@ export default {
     SvrControl: {
         initSuccess: '服务控制模块启动成功 - Pid:',
         readInfoErr: 'SvrControl(): 无法读取系统服务状态信息!',
+        readCtrlFileErr: 'SvrControl(): 无法读取服务控制文件!',
+        chmodWarn: 'SvrControl(): 无法将控制文件权限设置为600，可能存在安全风险!',
+        switchErr: 'SvrControl(): 尝试切换服务状态失败!',
+        switchSuccess: 'SvrControl(): 服务状态切换成功!',
         errorCount: 'SvrControl(): 连续失败超过 10 次，自动终止服务状态监控功能，服务控制模块进入受限模式!',
     },
 }

@@ -9,23 +9,22 @@ export class SysMonitor {
     #enabled = false;
     #dataPath = null;
     #errorCount = 0;
-    #tmpFile = null;
+    #tmpDir = null;
     #interval = -1;
     #timmer = null;
 
     /**
-      * 初始化系统监控模块
-      * @param {Object} config - 配置文件对象
-      * @returns {number} - 0 为成功，-1为被禁用，其他为错误代码
+     * 初始化系统监控模块
+     * @returns {number} - 0 为成功，其他为错误代码
      */
     init() {
         // 加载配置
         this.#enabled = config.sysMonitor?.enable ?? false;
         this.#dataPath = config.sysMonitor?.dataPath ?? null;
         this.#interval = config.sysMonitor?.interval ?? 1000;
-        
+
         // 监听间隔检查
-        if (this.#interval < 1000) console.warn(lang.SysMonitor.intervalWarn);
+        if (this.#interval < 1000) console.warn(lang.public.intervalWarn);
         if (this.#interval > 3600000) this.#interval = 3600000; // 最大间隔为1小时
         if (this.#interval < 100) this.#interval = 100; // 最小间隔为100ms
         if (!this.#enabled || !this.#dataPath) return 0;
@@ -38,29 +37,29 @@ export class SysMonitor {
         }
 
         // 清理残留数据
-        const [oldFiles, readErr] = os.stat(this.#dataPath + '/sysStatus.json');
+        const [oldFiles, readErr] = os.stat(this.#dataPath + '/system.json');
         if (readErr === 0) {
             if ((oldFiles.mode & os.S_IFMT) === os.S_IFDIR) {
                 console.error('SysMonitor():', lang.public.isDirErr);
                 return 21; // EISDIR
             }
-            if (os.remove(this.#dataPath + '/sysStatus.json') !== 0) {
+            if (os.remove(this.#dataPath + '/system.json') !== 0) {
                 console.error('SysMonitor():', lang.public.removeErr);
                 return 5; // EIO
             }
         }
 
         // 获取临时文件名
-        const tmpFileName = exec('mktemp -d /dev/shm/sysmon-XXXXXXXXXXXX');
-        if (!tmpFileName) {
+        const tmpDirName = exec('mktemp -d /dev/shm/sysmon-XXXXXXXXXXXX');
+        if (!tmpDirName) {
             console.error('SysMonitor():', lang.public.mktempErr);
             return 5; // EIO
         } else {
-            this.#tmpFile = tmpFileName.trim();
+            this.#tmpDir = tmpDirName.trim();
         }
 
         // 创建符号链接
-        if (os.symlink(this.#tmpFile + '/sysStatus.json', this.#dataPath + '/sysStatus.json') !== 0) {
+        if (os.symlink(this.#tmpDir + '/system.json', this.#dataPath + '/system.json') !== 0) {
             console.error('SysMonitor():', lang.public.symlinkErr);
             return 18; // EXDEV
         }
@@ -131,8 +130,8 @@ export class SysMonitor {
         };
 
         // 写入临时文件
-        if (!writeFile(this.#tmpFile + '/sysStatus.json.tmp', JSON.stringify({ timestamp: Date.now(), cpu: cpuInfo, memory: memObject }), 'w')) {
-            console.warn(lang.SysMonitor.writeFileErr);
+        if (!writeFile(this.#tmpDir + '/system.json.tmp', JSON.stringify({ timestamp: Date.now(), cpu: cpuInfo, memory: memObject }), 'w')) {
+            console.warn(lang.public.writeFileErr);
             this.#errorCount++;
             if (this.#errorCount > 10) {
                 console.error(lang.SysMonitor.errorCount);
@@ -144,7 +143,7 @@ export class SysMonitor {
         }
 
         // 替换文件
-        os.rename(this.#tmpFile + '/sysStatus.json.tmp', this.#tmpFile + '/sysStatus.json');
+        os.rename(this.#tmpDir + '/system.json.tmp', this.#tmpDir + '/system.json');
 
         // 启动定时器
         const startErr = this.#startTimmer();
@@ -162,8 +161,9 @@ export class SysMonitor {
         this.#enabled = false;
         this.#interval = -1;
         if (this.#timmer) os.clearTimeout(this.#timmer);
-        os.remove(this.#tmpFile + '/sysStatus.json');
-        os.remove(this.#tmpFile + '/sysStatus.json.tmp');
-        os.remove(this.#dataPath + '/sysStatus.json');
+        os.remove(this.#tmpDir + '/system.json');
+        os.remove(this.#tmpDir + '/system.json.tmp');
+        os.remove(this.#dataPath + '/system.json');
+        exec('rm -r ' + this.#tmpDir);
     }
 }
