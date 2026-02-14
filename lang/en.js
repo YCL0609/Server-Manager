@@ -20,11 +20,23 @@ export default {
         writeFileErr: 'Unable to write data file!',
         removeErr: 'Unable to remove old data file!',
         startTimmerErr: 'Unable to start timer!',
+        cleanTip: 'Perform exit cleanup'
     },
     dirCheck: {
         illegalPath: 'dirCheck(): Illegal path segment detected! Function returns early.',
         errNewDir: 'dirCheck(): Unable to create directory',
         fileExist: 'dirCheck(): Path already exists and is not a directory! Function returns early. Path:',
+    },
+    helpTipShow: {
+        usage: 'Usage',
+        option: 'Options',
+        detal: 'A lightweight server monitoring and service management tool',
+        helpDetal: 'Display help information and exit',
+        cfgDetal: 'Specify the configuration file path (default: /etc/server_manager.cfg)',
+        sysmonDetal: 'Start in system monitoring mode (usually invoked automatically by the main process)',
+        srvctlDetal: 'Started in service control mode (usually invoked automatically by the main process)',
+        permission: 'Permission Settings',
+        permDetal: 'Since the service control module involves systemctl operations, please ensure that the following line exists in /etc/sudoers'
     },
     SysMonitor: {
         initSuccess: 'System Monitor started successfully - Pid:',

@@ -1,10 +1,10 @@
 import * as os from 'qjs:os';
 import * as std from 'qjs:std';
-import { writeFile } from '../lib/writeFile.js';
-import { dirCheck } from '../lib/dirCheck.js';
-import { lang, console, config } from '../lib/init.js';
 import { exec } from '../lib/runCmd.js';
+import { dirCheck } from '../lib/dirCheck.js';
+import { writeFile } from '../lib/writeFile.js';
 import { watchFile } from '../lib/watchFile.js';
+import { lang, console, config } from '../lib/init.js';
 
 export class SvrControl {
     #enabled = false;
@@ -246,6 +246,10 @@ export class SvrControl {
         // 执行系统命令
         const cmd = `sudo systemctl ${action} ${service}`;
         const result = exec(cmd);
+
+        // 重新生成状态文件
+        if (this.#timmer) os.clearTimeout(this.#timmer);
+        this.#TimmerHandler();
 
         return (result !== null)
     }

@@ -1,9 +1,10 @@
 import * as os from 'qjs:os';
 import * as std from 'qjs:std';
 import { writeFile } from './lib/writeFile.js';
-import { lang, console } from './lib/init.js';
 import { SysMonitor } from './modules/sysMonitor.js';
 import { SvrControl } from './modules/svrControl.js';
+import { helpTipShow } from './modules/helpTipShow.js';
+import { lang, console, isShowHelp } from './lib/init.js';
 
 // 命令行参数
 const sysmonIndex = scriptArgs.indexOf('--sysmon');
@@ -19,6 +20,10 @@ if (sysmonIndex !== -1 && svrctrlIndex !== -1) {
     // 参数错误
     console.error(lang.init.argErr);
     std.exit(22); // EINVAL
+} else if (isShowHelp) {
+    // 输出帮助信息
+    helpTipShow.all();
+    std.exit(0);
 } else if (sysmonIndex !== -1 && svrctrlIndex === -1) {
     // 系统监控模块
     const sysMonitor = new SysMonitor();

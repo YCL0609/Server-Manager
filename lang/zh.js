@@ -27,6 +27,17 @@ export default {
         errNewDir: 'dirCheck(): 无法创建目录',
         fileExist: 'dirCheck(): 路径已存在且不是目录! 函数提前返回 - 路径:',
     },
+    helpTipShow: {
+        usage: '用法',
+        option: '选项',
+        detal: '一个轻量级的服务器系统监控与服务管理工具',
+        helpDetal: '显示帮助信息并退出',
+        cfgDetal: '指定配置文件路径 (默认: /etc/server_manager.cfg)',
+        sysmonDetal: '以系统监控模式启动 (通常由主进程自动调用)',
+        srvctlDetal: '以服务控制模式启动 (通常由主进程自动调用)',
+        permission: '权限配置',
+        permDetal: '由于服务控制模块涉及 systemctl 操作, 请确 /etc/sudoers 中存在以下行'
+    },
     SysMonitor: {
         initSuccess: '系统监控模块启动成功 - Pid:',
         readInfoErr: 'SysMonitor(): 无法读取系统状态信息!',
