@@ -62,35 +62,74 @@ if (sysmonIndex !== -1 && svrctrlIndex !== -1) {
     }
 } else {
     // 启动主进程
-    if (!getLockFile()) { // 尝试获取锁文件
+    const lockFilePath = '/tmp/server-manager.lock';
+    if (!getLockFile(lockFilePath)) { // 尝试获取锁文件
         console.log(lang.init.inrunning);
         std.exit(0);
     }
+    console.log(lang.init.initSuccess, os.getpid())
+
+
+    // 追踪子进程 PID
+    const childPids = [];
+
+    // 清理函数
+    const cleanup = () => {
+        console.log(lang.public.cleanTip);
+        childPids.forEach(pid => {
+            try {
+                os.kill(pid, 15);
+            } catch (_) { }
+        });
+        // 移除锁文件
+        os.remove(lockFilePath);
+        std.exit(0);
+    };
+
+    // 监听中断信号
+    os.signal(os.SIGINT, cleanup);
+    os.signal(os.SIGTERM, cleanup);
+
     // 启动所有子进程
-    let count = 0;
     tasks.forEach(args => {
-        if (os.exec(args, { block: false }) >= 0) count++;
+        const pid = os.exec(args, { block: false });
+        if (pid >= 0) {
+            childPids.push(pid);
+        }
     });
-    if (count !== tasks.length) console.warn(lang.init.childProcessErr, `(${count}/${tasks.length})`);
+
+    let count = childPids.length;
+    if (count !== tasks.length) {
+        console.warn(lang.init.childProcessErr, `(${count}/${tasks.length})`);
+    }
 
     // 等待所有子进程结束
     while (count > 0) {
         const [retPid, status] = os.waitpid(-1, 0);
-        if (retPid > 0) count--;
-        if (status !== 0) console.warn(lang.init.childProcExitErr, `PID: ${retPid}, Code: ${status >> 8}`);
+        if (retPid > 0) {
+            count--;
+            // 从追踪列表中移除
+            const idx = childPids.indexOf(retPid);
+            if (idx > -1) childPids.splice(idx, 1);
+            if (status !== 0) console.warn(lang.init.childProcExitErr, `PID: ${retPid}, Code: ${status >> 8}`);
+        } else {
+            // 如果 waitpid 被信号中断，检查 count 并在循环中继续
+            if (count <= 0) break;
+        }
     }
+
+    // 正常运行结束也清理锁文件
+    os.remove(lockFilePath);
 }
 
 /**
  * 尝试获取锁文件
+ * @param {string} lockFilePath
  * @returns {boolean} - 是否取得锁文件 
  */
-function getLockFile() {
-    const lockFilePath = '/tmp/server-manager.lock';
-
+function getLockFile(lockFilePath) {
     const oldFile = std.loadFile(lockFilePath);
     if (oldFile === null) {
-        // 锁文件不存在
         const isok = writeFile(lockFilePath, String(os.getpid()), 'w');
         if (!isok) {
             console.error(lang.init.lockFileErr);
@@ -100,7 +139,6 @@ function getLockFile() {
     }
 
     const oldPid = parseInt(oldFile.trim());
-    // 锁文件存在但内容不合法
     if (isNaN(oldPid)) {
         const isok = writeFile(lockFilePath, String(os.getpid()), 'w');
         if (!isok) {
@@ -116,5 +154,5 @@ function getLockFile() {
         console.error(lang.init.lockFileErr);
         std.exit(5); // EIO
     }
-    return true; // 进程不存在
+    return true;
 }

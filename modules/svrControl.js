@@ -86,9 +86,9 @@ export class SvrControl {
         watchFile('/dev/shm/servicesControl', errno => this.#fileChangeHandler(errno));
 
         // 注册信号处理函数
-        os.signal(os.SIGINT, () => this.#cleanup());
-        os.signal(os.SIGTERM, () => this.#cleanup());
-        os.signal(os.SIGQUIT, () => this.#cleanup());
+        os.signal(os.SIGINT, () => this.#cleanup(true));
+        os.signal(os.SIGTERM, () => this.#cleanup(true));
+        os.signal(os.SIGQUIT, () => this.#cleanup(true));
 
         // 启动定时器
         this.#inprocessing = false
@@ -177,8 +177,9 @@ export class SvrControl {
 
         // 控制文件监听错误
         if (errno !== 0) {
-            console.warn('SvrControl():', lang.SvrControl.readCtrlFileErr, errno);
+            console.warn(lang.SvrControl.readCtrlFileErr);
             this.#errorCount++;
+            console.log(this.#errorCount)
             if (this.#errorCount > 10) {
                 console.error(lang.SvrControl.errorCount);
                 this.#cleanup();
@@ -251,8 +252,11 @@ export class SvrControl {
 
     /**
      * 内湖函数: 清理残留文件
+     * @param {boolean} isexit - 是否退出并返回退出码0 
      */
-    #cleanup() {
+    #cleanup(isexit = false) {
+        console.log('SvrControl():', lang.public.cleanTip);
+        this.#inprocessing = true;
         this.#enabled = false;
         this.#interval = -1;
         if (this.#timmer) os.clearTimeout(this.#timmer);
@@ -260,5 +264,6 @@ export class SvrControl {
         os.remove(this.#tmpDir + '/service.json');
         os.remove(this.#tmpDir + '/service.json.tmp');
         os.remove(this.#dataPath + '/service.json');
+        if (isexit) std.exit(0);
     }
 }

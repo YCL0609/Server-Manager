@@ -1,5 +1,6 @@
 export default {
     init: {
+        initSuccess: '主进程启动成功 - Pid:',
         argErr: '出现参数冲突，程序退出',
         childProcExitErr: '子进程异常退出',
         inrunning: '已有实例在运行中，程序退出',
@@ -19,6 +20,7 @@ export default {
         writeFileErr: '无法写入数据文件!',
         removeErr: '无法删除旧数据文件!',
         startTimmerErr: '无法启动定时器!',
+        cleanTip: '执行退出清理操作'
     },
     dirCheck: {
         illegalPath: 'dirCheck(): 检测到非法路径段! 函数提前返回',
@@ -37,6 +39,6 @@ export default {
         chmodWarn: 'SvrControl(): 无法将控制文件权限设置为600，可能存在安全风险!',
         switchErr: 'SvrControl(): 尝试切换服务状态失败!',
         switchSuccess: 'SvrControl(): 服务状态切换成功!',
-        errorCount: 'SvrControl(): 连续失败超过 10 次，自动终止服务状态监控功能，服务控制模块进入受限模式!',
+        errorCount: 'SvrControl(): 连续失败超过 10 次，自动终止服务控制模块!',
     },
 }

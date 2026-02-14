@@ -1,5 +1,6 @@
 export default {
     init: {
+        initSuccess: 'Main process started successfully - Pid:',
         argErr: 'Parameter conflict detected, exiting program',
         childProcExitErr: 'Child process exited with an error',
         inrunning: 'An instance is already running, exiting program',

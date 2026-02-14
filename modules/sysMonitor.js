@@ -156,8 +156,10 @@ export class SysMonitor {
 
     /**
      * 内湖函数: 清理残留文件
+     * @param {boolean} isexit - 是否退出并返回退出码0 
      */
-    #cleanup() {
+    #cleanup(isexit = false) {
+        console.log('SysMonitor():', lang.public.cleanTip);
         this.#enabled = false;
         this.#interval = -1;
         if (this.#timmer) os.clearTimeout(this.#timmer);
@@ -165,5 +167,6 @@ export class SysMonitor {
         os.remove(this.#tmpDir + '/system.json.tmp');
         os.remove(this.#dataPath + '/system.json');
         exec('rm -r ' + this.#tmpDir);
+        if (isexit) std.exit(0)
     }
 }
