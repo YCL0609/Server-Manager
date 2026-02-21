@@ -11,7 +11,7 @@ export class SysMonitor {
     #errorCount = 0;
     #tmpDir = null;
     #interval = -1;
-    #timmer = null;
+    #Timer = null;
 
     /**
      * 初始化系统监控模块
@@ -37,7 +37,7 @@ export class SysMonitor {
         }
 
         // 清理残留数据
-        const [oldFiles, readErr] = os.stat(this.#dataPath + '/system.json');
+        const [oldFiles, readErr] = os.lstat(this.#dataPath + '/system.json');
         if (readErr === 0) {
             if ((oldFiles.mode & os.S_IFMT) === os.S_IFDIR) {
                 console.error('SysMonitor():', lang.public.isDirErr);
@@ -51,11 +51,11 @@ export class SysMonitor {
 
         // 获取临时文件名
         const tmpDirName = exec('mktemp -d /dev/shm/sysmon-XXXXXXXXXXXX');
-        if (!tmpDirName) {
+        if (tmpDirName.exitCode !==0) {
             console.error('SysMonitor():', lang.public.mktempErr);
             return 5; // EIO
         } else {
-            this.#tmpDir = tmpDirName.trim();
+            this.#tmpDir = tmpDirName.output;
         }
 
         // 创建符号链接
@@ -70,7 +70,7 @@ export class SysMonitor {
         os.signal(os.SIGQUIT, () => this.#cleanup());
 
         // 启动定时器
-        this.#TimmerHandler();
+        this.#TimerHandler();
 
         console.log(lang.SysMonitor.initSuccess, os.getpid());
         return 0;
@@ -80,18 +80,18 @@ export class SysMonitor {
      * 内部函数：启动定时器
      * @returns {number} - 0 为成功，其他为错误代码
      */
-    #startTimmer() {
+    #startTimer() {
         if (!this.#enabled || !this.#dataPath) return 0;
-        const fd = os.setTimeout(() => this.#TimmerHandler(), this.#interval);
+        const fd = os.setTimeout(() => this.#TimerHandler(), this.#interval);
         if (!fd) return 4; // EINTR
-        this.#timmer = fd;
+        this.#Timer = fd;
         return 0;
     }
 
     /**
      * 内部函数：定时器处理函数
      */
-    #TimmerHandler() {
+    #TimerHandler() {
         if (!this.#enabled || !this.#dataPath) return;
         // 读取系统信息
         const cpuRaw = std.loadFile('/proc/loadavg');
@@ -145,10 +145,14 @@ export class SysMonitor {
         // 替换文件
         os.rename(this.#tmpDir + '/system.json.tmp', this.#tmpDir + '/system.json');
 
+        // 链接检查
+        const [_, err] = os.lstat(this.#dataPath + '/system.json');
+        if (err !== 0) os.symlink(this.#tmpDir + '/system.json', this.#dataPath + '/system.json')
+
         // 启动定时器
-        const startErr = this.#startTimmer();
+        const startErr = this.#startTimer();
         if (startErr !== 0) {
-            console.error('SysMonitor():', lang.public.startTimmerErr);
+            console.error('SysMonitor():', lang.public.startTimerErr);
             this.#cleanup();
             std.exit(startErr);
         }
@@ -162,7 +166,7 @@ export class SysMonitor {
         console.log('SysMonitor():', lang.public.cleanTip);
         this.#enabled = false;
         this.#interval = -1;
-        if (this.#timmer) os.clearTimeout(this.#timmer);
+        if (this.#Timer) os.clearTimeout(this.#Timer);
         os.remove(this.#tmpDir + '/system.json');
         os.remove(this.#tmpDir + '/system.json.tmp');
         os.remove(this.#dataPath + '/system.json');

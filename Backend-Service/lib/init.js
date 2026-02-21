@@ -28,8 +28,8 @@ if (_cfgerr !== 0 && !isShowHelp) {
     console.error(lang.init.statErr, _cfgerr);
     std.exit(2);
 }
-const _isModeOK = _cfgDetail?.uid !== 0 || (_cfgDetail?.mode & 0o777) !== 0o644;
-if (_isModeOK && !isShowHelp) {
+const _isModeOK = (_cfgDetail?.mode & 0o777) === 0o644;
+if (!_isModeOK && !isShowHelp) {
     console.warn(lang.init.fileModeErr);
     std.exit(13);
 }

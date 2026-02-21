@@ -13,7 +13,8 @@ export class SvrControl {
     #errorCount = 0;
     #tmpDir = null;
     #interval = -1;
-    #timmer = null;
+    #Timer = null;
+    #watcher = null;
     #inprocessing = true;
     static #partLength = 4;
     static #alowAction = ['start', 'stop', 'restart'];
@@ -43,7 +44,7 @@ export class SvrControl {
         }
 
         // 清理残留数据
-        const [oldFiles, readErr] = os.stat(this.#dataPath + '/service.json');
+        const [oldFiles, readErr] = os.lstat(this.#dataPath + '/service.json');
         if (readErr === 0) {
             if ((oldFiles.mode & os.S_IFMT) === os.S_IFDIR) {
                 console.error('SvrControl():', lang.public.isDirErr);
@@ -57,11 +58,11 @@ export class SvrControl {
 
         // 获取临时文件名
         const tmpDirName = exec('mktemp -d /dev/shm/svrControl-XXXXXXXXXXXX');
-        if (!tmpDirName) {
+        if (tmpDirName.exitCode !== 0) {
             console.error('SvrControl():', lang.public.mktempErr);
             return 5; // EIO
         } else {
-            this.#tmpDir = tmpDirName.trim();
+            this.#tmpDir = tmpDirName.output;
         }
 
         // 创建符号链接
@@ -77,13 +78,13 @@ export class SvrControl {
         }
 
         // 设置控制文件权限 600(-rw-------)
-        if (exec('chmod 600 /dev/shm/servicesControl') === null) {
+        if (exec('chmod 600 /dev/shm/servicesControl').exitCode !== 0) {
             console.error('SvrControl():', lang.SvrControl.chmodWarn);
             return 5; // EIO
         }
 
         // 监听控制文件变化
-        watchFile('/dev/shm/servicesControl', errno => this.#fileChangeHandler(errno));
+        const watcher = watchFile('/dev/shm/servicesControl', (err) => this.#fileChangeHandler(err));
 
         // 注册信号处理函数
         os.signal(os.SIGINT, () => this.#cleanup(true));
@@ -92,7 +93,7 @@ export class SvrControl {
 
         // 启动定时器
         this.#inprocessing = false
-        this.#TimmerHandler();
+        this.#TimerHandler();
 
         console.log(lang.SvrControl.initSuccess, os.getpid());
         return 0;
@@ -102,25 +103,36 @@ export class SvrControl {
      * 内部函数：启动定时器
      * @returns {number} - 0 为成功，其他为错误代码
      */
-    #startTimmer() {
+    #startTimer() {
         if (!this.#enabled || !this.#dataPath || this.#services.length === 0) return 0;
-        const fd = os.setTimeout(() => this.#TimmerHandler(), this.#interval);
+        const fd = os.setTimeout(() => this.#TimerHandler(), this.#interval);
         if (!fd) return 4; // EINTR
-        this.#timmer = fd;
+        this.#Timer = fd;
         return 0;
     }
 
     /**
      * 内部函数：定时器处理函数
      */
-    #TimmerHandler() {
+    #TimerHandler() {
         if (this.#inprocessing) return;
         if (!this.#enabled || !this.#dataPath || this.#services.length === 0) return;
 
         // 获取服务状态
-        const svStatusRaw = exec('SYSTEMD_COLORS=0 systemctl list-units --type=service --no-legend --plain');
+        const svStatusRaw = exec('SYSTEMD_COLORS=0 timeout 5 systemctl list-units --type=service --no-legend --plain');
+        if (svStatusRaw.exitCode !== null) {
+            console.warn(lang.public.writeFileErr);
+            this.#errorCount++;
+            if (this.#errorCount > 10) {
+                console.error(lang.SvrControl.errorCount);
+                this.#cleanup();
+                std.exit(5); // EIO
+            }
+            return;
+        } else { this.#errorCount = 0 };
+
         // 解析服务状态
-        const svStatus = svStatusRaw.trim().split('\n').reduce((acc, line) => {
+        const svStatus = svStatusRaw.output.split('\n').reduce((acc, line) => {
             const parts = line.trim().split(/\s+/);
             if (parts.length >= 5) {
                 const [unit, load, active, sub, ...descParts] = parts;
@@ -155,13 +167,18 @@ export class SvrControl {
         } else {
             this.#errorCount = 0; // 重置错误计数
         }
+
         // 替换文件
         os.rename(this.#tmpDir + '/service.json.tmp', this.#tmpDir + '/service.json');
 
+        // 链接检查
+        const [_, l_err] = os.lstat(this.#dataPath + '/service.json');
+        if (l_err !== 0) os.symlink(this.#tmpDir + '/service.json', this.#dataPath + '/service.json')
+
         // 启动定时器
-        const startErr = this.#startTimmer();
+        const startErr = this.#startTimer();
         if (startErr !== 0) {
-            console.error(lang.public.startTimmerErr);
+            console.error(lang.public.startTimerErr);
             this.#cleanup();
             std.exit(startErr);
         }
@@ -210,9 +227,16 @@ export class SvrControl {
             return 5; // EIO
         }
 
+        // 重置控制文件修改时间
+        const [st, __] = os.stat('/dev/shm/servicesControl');
+        if (st) this.#watcher.updateLastMtime(st.mtime);
+
+
         // 合规性检查 (srvControl|time|service|todo)
         let isreturn = false;
-        const contentStr = fileContent.trim();
+        const contentStrRaw = fileContent.trim();
+        const contentStrTmp = contentStrRaw.replace(';', '');
+        const contentStr = contentStrTmp.replace('\n', '');
         const parts = contentStr.split('|');
         if (parts.length !== SvrControl.#partLength || parts[0] !== 'srvControl') isreturn = true; // 开始字段检测
         const [_, timeStr, service, todo] = parts;
@@ -225,7 +249,7 @@ export class SvrControl {
             this.#inprocessing = false;
             return;
         }
-
+        
         // 执行命令
         const isok = this.#switchService(service, todo);
         console.log(isok ? lang.SvrControl.switchSuccess : lang.SvrControl.switchErr, `- Service: ${service}, Action: ${todo}`);
@@ -243,15 +267,29 @@ export class SvrControl {
     #switchService(service, action) {
         if (!service || !action) return false;
 
+        const timeoutVal = (action === 'restart') ? '30' : '20';
+
         // 执行系统命令
-        const cmd = `sudo systemctl ${action} ${service}`;
+        const cmd = `sudo timeout ${timeoutVal} systemctl ${action} ${service}`;
         const result = exec(cmd);
 
         // 重新生成状态文件
-        if (this.#timmer) os.clearTimeout(this.#timmer);
-        this.#TimmerHandler();
+        os.clearTimeout(this.#Timer);
+        this.#TimerHandler();
 
-        return (result !== null)
+        // 命令超时
+        if (result.exitCode === 124) {
+            console.warn('SvrControl():' + lang.public.timeout);
+            return false;
+        }
+
+        // 命令错误
+        if (result.exitCode !== 0) {
+            console.error(lang.SvrControl.switchErr, ' - Code:', result.exitCode);
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -263,7 +301,7 @@ export class SvrControl {
         this.#inprocessing = true;
         this.#enabled = false;
         this.#interval = -1;
-        if (this.#timmer) os.clearTimeout(this.#timmer);
+        if (this.#Timer) os.clearTimeout(this.#Timer);
         os.remove('/dev/shm/servicesControl');
         os.remove(this.#tmpDir + '/service.json');
         os.remove(this.#tmpDir + '/service.json.tmp');

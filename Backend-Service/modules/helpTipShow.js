@@ -4,7 +4,7 @@ import { lang, version } from "../lib/init.js";
 export class helpTipShow {
     static all() {
         const name = scriptArgs[0].split('/').pop();
-        const user = exec('whoami').trim() ?? '[USER]';
+        const user = exec('whoami').output ?? '[USER]';
         const i18n = lang.helpTipShow;
 
         print('Server-Manager  version ' + version);

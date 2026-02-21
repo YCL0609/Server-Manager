@@ -16,55 +16,28 @@ const tasks = [
     [...scriptArgs, '--svrctrl'],
 ];
 
+// 参数错误
 if (sysmonIndex !== -1 && svrctrlIndex !== -1) {
-    // 参数错误
     console.error(lang.init.argErr);
     std.exit(22); // EINVAL
-} else if (isShowHelp) {
-    // 输出帮助信息
+}
+
+// 输出帮助信息
+if (isShowHelp) {
     helpTipShow.all();
     std.exit(0);
-} else if (sysmonIndex !== -1 && svrctrlIndex === -1) {
+}
+
+if (sysmonIndex !== -1) {
     // 系统监控模块
     const sysMonitor = new SysMonitor();
     const initErr = sysMonitor.init();
     if (initErr !== 0) std.exit(initErr);
-} else if (svrctrlIndex !== -1 && sysmonIndex === -1) {
-    // 服务器控制模块
-    const switchIndex = scriptArgs.indexOf('--switch');
-    if (switchIndex === -1) {
-        // 正常启动
-        const srvControl = new SvrControl();
-        const initErr = srvControl.init();
-        if (initErr !== 0) std.exit(initErr);
-    } else {
-        // 服务器控制子命令
-        const serviceId = parseInt(scriptArgs[switchIndex + 1]);
-        const todoId = parseInt(scriptArgs[switchIndex + 2]);
-        if (isNaN(serviceId) || isNaN(todoId)) {
-            console.error(lang.init.argErr);
-            std.exit(22); // EINVAL
-        }
-        const switchErr = SvrControl.switchService(serviceId, todoId);
-        switch (switchErr) {
-            case -1:
-                console.error(lang.init.argErr);
-                std.exit(22); // EINVAL
-                break;
-            case 0:
-                console.log(lang.SvrControl.switchSuccess, `- Service ID: ${serviceId}, Action ID: ${todoId}`);
-                std.exit(0);
-                break;
-            case 1:
-                console.error(lang.SvrControl.switchErr, `- Service ID: ${serviceId}, Action ID: ${todoId}`);
-                std.exit(5); // EIO
-                break;
-            default:
-                console.error(lang.init.argErr);
-                std.exit(22); // EINVAL
-                break;
-        }
-    }
+} else if (svrctrlIndex !== -1) {
+    // 服务控制模块
+    const srvControl = new SvrControl();
+    const initErr = srvControl.init();
+    if (initErr !== 0) std.exit(initErr);
 } else {
     // 启动主进程
     const lockFilePath = '/tmp/server-manager.lock';
@@ -81,12 +54,26 @@ if (sysmonIndex !== -1 && svrctrlIndex !== -1) {
     // 清理函数
     const cleanup = () => {
         console.log(lang.public.cleanTip);
+
+        // 终止子进程
         childPids.forEach(pid => {
             try {
-                os.kill(pid, 15);
+                os.kill(pid, 15); // SIGTERM
             } catch (_) { }
         });
-        // 移除锁文件
+
+        // 等待所有子进程退出
+        while (childPids.length > 0) {
+            const [retPid, status] = os.waitpid(-1, 0);
+            if (retPid > 0) {
+                const idx = childPids.indexOf(retPid);
+                if (idx > -1) childPids.splice(idx, 1);
+            } else {
+                break;
+            }
+        }
+
+        // 3. 移除锁文件并退出
         os.remove(lockFilePath);
         std.exit(0);
     };

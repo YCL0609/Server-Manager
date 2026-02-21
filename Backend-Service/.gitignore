@@ -1,4 +1,4 @@
-# 忽略quickjs-ng仓库库
+# 忽略quickjs-ng仓库
 bin/
 bin
 
@@ -7,4 +7,4 @@ out/
 
 # 忽略临时文件
 *.json
-*.c
+*.zip
