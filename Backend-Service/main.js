@@ -64,7 +64,7 @@ if (sysmonIndex !== -1) {
 
         // 等待所有子进程退出
         while (childPids.length > 0) {
-            const [retPid, status] = os.waitpid(-1, 0);
+            const [retPid, _] = os.waitpid(-1, 0);
             if (retPid > 0) {
                 const idx = childPids.indexOf(retPid);
                 if (idx > -1) childPids.splice(idx, 1);
@@ -103,7 +103,7 @@ if (sysmonIndex !== -1) {
             // 从追踪列表中移除
             const idx = childPids.indexOf(retPid);
             if (idx > -1) childPids.splice(idx, 1);
-            if (status !== 0) console.warn(lang.init.childProcExitErr, `PID: ${retPid}, Code: ${status >> 8}`);
+            if ((status >> 8) !== 0) console.warn(lang.init.childProcExitErr, `PID: ${retPid}, Code: ${status >> 8}`);
         } else {
             // 如果 waitpid 被信号中断，检查 count 并在循环中继续
             if (count <= 0) break;

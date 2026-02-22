@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Server Monitor - Responsive Stats</title>
+    <link rel="stylesheet" href="./index.css">
+    <script src="https://server0.ycl.cool/js/function.umd.min.js"></script>
+    <script src="./jsencrypt.min.js"></script>
+    <script src="./index.js"></script>
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+</head>
+
+<body class="bg-[#0d1117] text-gray-300 p-4 md:p-8 font-sans">
+    <div class="max-w-6xl mx-auto space-y-8">
+
+        <section>
+            <h2 class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-3 px-1">CPU负载</h2>
+            <div
+                class="grid grid-cols-2 md:grid-cols-4 gap-px bg-gray-800 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl">
+                <div class="bg-[#161b22] p-8 text-center">
+                    <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">1 分钟内</span>
+                    <div id="load-1" class="text-5xl lg:text-6xl font-light text-white tracking-tighter">-</div>
+                </div>
+                <div class="bg-[#161b22] p-8 text-center">
+                    <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">5 分钟内</span>
+                    <div id="load-5" class="text-5xl lg:text-6xl font-light text-white tracking-tighter">-</div>
+                </div>
+                <div class="bg-[#161b22] p-8 text-center">
+                    <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">15 分钟内</span>
+                    <div id="load-15" class="text-5xl lg:text-6xl font-light text-white tracking-tighter">-</div>
+                </div>
+                <div class="bg-[#161b22] p-8 text-center">
+                    <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">Tasks (A/T)</span>
+                    <div id="load-tasks"
+                        class="text-5xl lg:text-6xl font-light text-blue-400 tracking-tighter font-mono">-</div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="flex justify-between items-end mb-3 px-1">
+                <h2 class="text-xs font-bold text-green-500 uppercase tracking-widest">内存负载</h2>
+                <div id="mem-usage-text" class="text-2xl font-light text-white font-mono">-% Used</div>
+            </div>
+            <div id="mem-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            </div>
+        </section>
+
+        <section>
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-3 px-1 gap-4">
+                <h2 class="text-xs font-bold text-purple-500 uppercase tracking-widest">服务控制</h2>
+                <div class="flex items-center gap-2">
+                    <label class="text-[10px] text-gray-500 uppercase font-bold">操作令牌:</label>
+                    <input type="file" id="token-file" accept="*.pem,*.*"
+                        class="text-xs text-gray-400 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-purple-600/10 file:text-purple-500 hover:file:bg-purple-600/20 cursor-pointer">
+                </div>
+            </div>
+            <div id="service-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            </div>
+        </section>
+    </div>
+
+</body>
+
+</html>

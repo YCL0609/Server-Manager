@@ -51,7 +51,7 @@ export class SysMonitor {
 
         // 获取临时文件名
         const tmpDirName = exec('mktemp -d /dev/shm/sysmon-XXXXXXXXXXXX');
-        if (tmpDirName.exitCode !==0) {
+        if (tmpDirName.exitCode !== 0) {
             console.error('SysMonitor():', lang.public.mktempErr);
             return 5; // EIO
         } else {
@@ -131,7 +131,7 @@ export class SysMonitor {
 
         // 写入临时文件
         if (!writeFile(this.#tmpDir + '/system.json.tmp', JSON.stringify({ timestamp: Date.now(), cpu: cpuInfo, memory: memObject }), 'w')) {
-            console.warn(lang.public.writeFileErr);
+            console.warn('SysMonitor():', lang.public.writeFileErr);
             this.#errorCount++;
             if (this.#errorCount > 10) {
                 console.error(lang.SysMonitor.errorCount);

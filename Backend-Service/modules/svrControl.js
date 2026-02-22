@@ -84,7 +84,7 @@ export class SvrControl {
         }
 
         // 监听控制文件变化
-        const watcher = watchFile('/dev/shm/servicesControl', (err) => this.#fileChangeHandler(err));
+        this.#watcher = watchFile('/dev/shm/servicesControl', (err) => this.#fileChangeHandler(err));
 
         // 注册信号处理函数
         os.signal(os.SIGINT, () => this.#cleanup(true));
@@ -119,9 +119,9 @@ export class SvrControl {
         if (!this.#enabled || !this.#dataPath || this.#services.length === 0) return;
 
         // 获取服务状态
-        const svStatusRaw = exec('SYSTEMD_COLORS=0 timeout 5 systemctl list-units --type=service --no-legend --plain');
-        if (svStatusRaw.exitCode !== null) {
-            console.warn(lang.public.writeFileErr);
+        const svStatusRaw = exec('SYSTEMD_COLORS=0 timeout 5 systemctl list-units --type=service --no-legend --plain');0
+        if (svStatusRaw.exitCode !== 0) {
+            console.warn('SvrControl():', lang.public.writeFileErr);
             this.#errorCount++;
             if (this.#errorCount > 10) {
                 console.error(lang.SvrControl.errorCount);
@@ -157,7 +157,7 @@ export class SvrControl {
 
         // 写入临时文件
         if (!writeFile(this.#tmpDir + '/service.json.tmp', JSON.stringify(data), 'w')) {
-            console.warn(lang.public.writeFileErr);
+            console.warn('SvrControl():', lang.public.writeFileErr);
             this.#errorCount++;
             if (this.#errorCount > 10) {
                 console.error(lang.SvrControl.errorCount);
@@ -231,7 +231,6 @@ export class SvrControl {
         const [st, __] = os.stat('/dev/shm/servicesControl');
         if (st) this.#watcher.updateLastMtime(st.mtime);
 
-
         // 合规性检查 (srvControl|time|service|todo)
         let isreturn = false;
         const contentStrRaw = fileContent.trim();
@@ -249,7 +248,7 @@ export class SvrControl {
             this.#inprocessing = false;
             return;
         }
-        
+
         // 执行命令
         const isok = this.#switchService(service, todo);
         console.log(isok ? lang.SvrControl.switchSuccess : lang.SvrControl.switchErr, `- Service: ${service}, Action: ${todo}`);
