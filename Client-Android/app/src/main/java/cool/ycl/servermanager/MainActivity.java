@@ -86,6 +86,12 @@ public class MainActivity extends AppCompatActivity {
         wv.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
+                String url = request.getUrl().toString();
+                if (url.startsWith("https://server0.ycl.cool")) {
+                    WebView webView = findViewById(R.id.webview);
+                    webView.loadUrl(url);
+                    return true;
+                }
                 return true;
             }
         });

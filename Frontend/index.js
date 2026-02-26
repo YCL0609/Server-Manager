@@ -2,8 +2,8 @@ const crypt = new JSEncrypt();
 let isUpdating = false;
 const cache = { sysRes: '', srvRes: '' };
 const config = {
-    serverURL: '',
-    controlPath: 'index.php',
+    serverURL: 'http://192.168.232.130/data/',
+    controlPath: 'http://192.168.232.130/control/index.php',
     interval: 3000,
     memKeys: {
         MemTotal: "Total", MemAvailable: "Available", AnonPages: "App(Anon)",
@@ -116,7 +116,7 @@ async function sendCmd(service, action, button) {
         fd.append('service', service);
         fd.append('action', action);
 
-        const res = await fetch(config.serverURL + config.controlPath, {
+        const res = await fetch(config.controlPath, {
             method: 'POST',
             headers: { 'token': token },
             body: fd

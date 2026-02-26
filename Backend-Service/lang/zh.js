@@ -7,7 +7,6 @@ export default {
         inrunning: '已有实例在运行中，程序退出.',
         initSuccess: '主进程启动成功. - Pid:',
         lockFileErr: '初始化错误: 无法获取锁文件!',
-        fileModeErr: '初始化错误: 请确保配置文件权限设置为 644(-rw-r--r--).',
         childProcessErr: '初始化错误: 一个或多个子进程启动失败!',
         childProcExitErr: '子进程异常退出!',
     },

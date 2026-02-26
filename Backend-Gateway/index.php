@@ -41,7 +41,6 @@ try {
     // 验证时间戳、时区和UTC偏移量
     $timeDiff = (substr($data['time']['date'], 0, -3) - time());
     if ($timeDiff > $dateRange || $timeDiff < 0) throw new Exception();
-    if ((substr($data['time']['date'], 0, -3) - $time) > $dateRange) throw new Exception();
     if (!in_array($data['time']['zone'], $zone)) throw new Exception();
     if (!in_array($data['time']['offset'], $offset)) throw new Exception();
 } catch (Exception $_) {

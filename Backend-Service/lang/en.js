@@ -7,7 +7,6 @@ export default {
         inrunning: 'An instance is already running, exiting program.',
         initSuccess: 'Main process started successfully. - Pid:',
         lockFileErr: 'Initialization error: Unable to acquire lock file!',
-        fileModeErr: 'Initialization Error: Please ensure that the configuration file has permissions set to 644(-rw-r--r--).',
         childProcessErr: 'Initialization error: one or more child processes failed to start!',
         childProcExitErr: 'Child process exited with an error!',
     },

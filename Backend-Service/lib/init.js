@@ -3,7 +3,7 @@ import * as std from 'qjs:std';
 import langText from '../lang/list.js';
 
 // 程序版本
-const version = '0.3'
+const version = '0.7'
 
 // 是否输出帮助信息
 const isShowHelp = scriptArgs.includes('--help') || scriptArgs.includes('-h');
@@ -27,11 +27,6 @@ const [_cfgDetail, _cfgerr] = os.stat(_cfgPath);
 if (_cfgerr !== 0 && !isShowHelp) {
     console.error(lang.init.statErr, _cfgerr);
     std.exit(2);
-}
-const _isModeOK = (_cfgDetail?.mode & 0o777) === 0o644;
-if (!_isModeOK && !isShowHelp) {
-    console.warn(lang.init.fileModeErr);
-    std.exit(13);
 }
 const _rawConfig = std.loadFile(_cfgPath);
 if (_rawConfig === null && !isShowHelp) {

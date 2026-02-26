@@ -10,6 +10,7 @@ export class SvrControl {
     #enabled = false;
     #dataPath = null;
     #services = [];
+    #serviceFilter = "";
     #errorCount = 0;
     #tmpDir = null;
     #interval = -1;
@@ -29,6 +30,7 @@ export class SvrControl {
         this.#dataPath = config.srvControl?.dataPath ?? null;
         this.#services = config.srvControl?.services ?? [];
         this.#interval = config.srvControl?.interval ?? 1000;
+        this.#serviceFilter = this.#services.join(' ').replaceAll(';','');
 
         // 监听间隔检查
         if (this.#interval < 1000) console.warn(lang.public.intervalWarn);
@@ -78,7 +80,7 @@ export class SvrControl {
         }
 
         // 设置控制文件权限 600(-rw-------)
-        if (exec('chmod 600 /dev/shm/servicesControl').exitCode !== 0) {
+        if (exec('chmod 660 /dev/shm/servicesControl').exitCode !== 0) {
             console.error('SvrControl():', lang.SvrControl.chmodWarn);
             return 5; // EIO
         }
@@ -115,11 +117,10 @@ export class SvrControl {
      * 内部函数：定时器处理函数
      */
     #TimerHandler() {
-        if (this.#inprocessing) return;
         if (!this.#enabled || !this.#dataPath || this.#services.length === 0) return;
 
         // 获取服务状态
-        const svStatusRaw = exec('SYSTEMD_COLORS=0 timeout 5 systemctl list-units --type=service --no-legend --plain');0
+        const svStatusRaw = exec(`SYSTEMD_COLORS=0 timeout 5 systemctl show ${this.#serviceFilter} --property=Id,LoadState,ActiveState,SubState,Description`);
         if (svStatusRaw.exitCode !== 0) {
             console.warn('SvrControl():', lang.public.writeFileErr);
             this.#errorCount++;
@@ -131,29 +132,40 @@ export class SvrControl {
             return;
         } else { this.#errorCount = 0 };
 
-        // 解析服务状态
-        const svStatus = svStatusRaw.output.split('\n').reduce((acc, line) => {
-            const parts = line.trim().split(/\s+/);
-            if (parts.length >= 5) {
-                const [unit, load, active, sub, ...descParts] = parts;
-                acc[unit] = {
-                    load: load,
-                    active: active,
-                    sub: sub,
-                    description: descParts.join(' ') // 将剩余部分重新组合成描述
-                };
+        // 解析数据
+        let currentUnit = {};
+        const svStatus = {};
+        const lines = svStatusRaw.output.split('\n');
+
+        lines.forEach(line => {
+            const [key, ...valParts] = line.split('=');
+            if (!key || valParts.length === 0) return;
+            const value = valParts.join('=');
+
+            if (key === 'Id') {
+                currentUnit = { id: value };
+                svStatus[value] = currentUnit;
+            } else if (currentUnit.id) {
+                if (key === 'LoadState') currentUnit.load = value;
+                if (key === 'ActiveState') currentUnit.active = value;
+                if (key === 'SubState') currentUnit.sub = value;
+                if (key === 'Description') currentUnit.description = value;
             }
-            return acc;
-        }, {});
+        });
 
         // 存储服务状态
         const data = {
             timestamp: Date.now(),
             services: this.#services.map(srv => ({
                 name: srv,
-                status: svStatus[srv] || {}
+                status: svStatus[srv] || {
+                    load: 'not-found',
+                    active: 'inactive',
+                    sub: 'dead',
+                    description: 'Unit not found or never loaded'
+                }
             }))
-        }
+        };
 
         // 写入临时文件
         if (!writeFile(this.#tmpDir + '/service.json.tmp', JSON.stringify(data), 'w')) {
@@ -250,7 +262,7 @@ export class SvrControl {
         }
 
         // 执行命令
-        const isok = this.#switchService(service, todo);
+        const isok = this.#switchService(service.replaceAll(';', ''), todo);
         console.log(isok ? lang.SvrControl.switchSuccess : lang.SvrControl.switchErr, `- Service: ${service}, Action: ${todo}`);
 
         if (isok) this.#errorCount = 0;
@@ -269,7 +281,7 @@ export class SvrControl {
         const timeoutVal = (action === 'restart') ? '30' : '20';
 
         // 执行系统命令
-        const cmd = `sudo timeout ${timeoutVal} systemctl ${action} ${service}`;
+        const cmd = `timeout ${timeoutVal} sudo systemctl ${action} ${service}`;
         const result = exec(cmd);
 
         // 重新生成状态文件
