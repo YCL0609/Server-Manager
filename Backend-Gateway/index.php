@@ -25,16 +25,12 @@ try {
     $dateRange = 90;
 
     // 设置允许的时区和UTC偏移量
-    /* 
-        IANA ID: America/Halifax
-        Offset: UTC-3(夏令时) UTC-4(冬令时)
-    */
+    /* IANA ID: America/Halifax
+       Offset: UTC-3(夏令时) UTC-4(冬令时) */
     $zone = array('America/Halifax');
     $offset = array(-3, -4);
-    /* 
-        IANA ID: Asia/Shanghai
-        Offset: UTC+8
-    */
+    /* IANA ID: Asia/Shanghai
+       Offset: UTC+8 */
     // $zone = array('Asia/Shanghai');
     // $offset = array(+8);
 
@@ -64,10 +60,10 @@ if (!in_array($action, $allowAct)) {
 }
 
 try {
-    $file = fopen('/dev/shm/servicesControl.tmp', 'w');
-    fwrite($file, 'srvControl|' . time() . '000|' . $serviceName . '|' . $action);
-    fclose($file);
-    rename('/dev/shm/servicesControl.tmp', '/dev/shm/servicesControl');
+    $pipe = fopen('/dev/shm/servicesControlPipe', 'w');
+    if (!$pipe) throw new Exception();
+    fwrite($pipe, 'srvControl|' . time() . '000|' . $serviceName . '|' . $action . "\n");
+    fclose($pipe);
 } catch (Exception $_) {
     http_response_code(500);
     die('500 Internal Server Error');

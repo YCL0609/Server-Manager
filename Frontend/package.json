@@ -1,9 +1,10 @@
 {
+  "name": "server-manager-frontend",
   "scripts": {
     "build": "node build.mjs"
   },
   "dependencies": {
-    "@tailwindcss/cli": "^4.2.0",
+    "@tailwindcss/cli": "^4.2.1",
     "jsencrypt": "^3.5.4"
   }
 }

@@ -1,10 +1,12 @@
-const crypt = new JSEncrypt();
+let id = null;
+let errorId = null;
 let isUpdating = false;
+const crypt = new JSEncrypt();
 const cache = { sysRes: '', srvRes: '' };
 const config = {
-    serverURL: 'http://192.168.232.130/data/',
-    controlPath: 'http://192.168.232.130/control/index.php',
-    interval: 3000,
+    serverURL: '',
+    controlURL: '',
+    interval: 99999,
     memKeys: {
         MemTotal: "Total", MemAvailable: "Available", AnonPages: "App(Anon)",
         Cached: "Cached", Buffers: "Buffers", SReclaimable: "SReclaim",
@@ -13,6 +15,17 @@ const config = {
     }
 };
 
+document.addEventListener('DOMContentLoaded', () => {
+    const listRaw = appBridge.readFile('list.json', 'err');
+    if (listRaw === 'err') return showMessage('无法读取本地数据', 'error');
+    const serverList = JSON.parse(listRaw);
+    const params = new URLSearchParams(window.location.search);
+    id = params.get('id');
+    if (!serverList[id]) return showMessage('本地数据格式错误', 'error')
+    config.serverURL = serverList[id].data;
+    config.controlURL = serverList[id].api;
+    config.interval = serverList[id].interval
+})
 
 document.addEventListener('DOMContentLoaded', () => {
     updateData();
@@ -26,10 +39,11 @@ async function updateData() {
 
     try {
         const [sysRes, srvRes] = await Promise.all([
-            fetch(config.serverURL + 'system.json').then(r => r.json()),
-            fetch(config.serverURL + 'service.json').then(r => r.json())
+            fetch(config.serverURL + 'system.json').then(netProcess),
+            fetch(config.serverURL + 'service.json').then(netProcess)
         ]);
 
+        // 缓存判断
         if (cache.sysRes !== sysRes) {
             renderCPU(sysRes.cpu);
             renderMemory(sysRes.memory);
@@ -39,10 +53,25 @@ async function updateData() {
             renderServices(srvRes.services);
             cache.srvRes = srvRes;
         }
+
+        if (errorId !== null) {
+            closeMessage(errorId);
+            errorId = null;
+        }
+        showError = true;
     } catch (e) {
-        console.error("Update error:", e);
+        if (errorId !== null) errorId = showMessage('服务器连接错误\n' + e.message, 'error');
     } finally {
         isUpdating = false;
+    }
+
+    async function netProcess(response) {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        try {
+            return await response.json();
+        } catch (e) {
+            throw new Error('Json file format error');
+        }
     }
 }
 
@@ -58,8 +87,8 @@ function renderCPU(cpu) {
 // 渲染内存信息
 function renderMemory(mem) {
     const usedPercent = ((mem.MemTotal - mem.MemAvailable) / mem.MemTotal * 100).toFixed(1);
-    const textEl = document.getElementById('mem-usage-text');
-    if (textEl) textEl.innerText = `${usedPercent}% Used`;
+    const textE = document.getElementById('mem-usage-text');
+    if (textE) textE.innerText = `${usedPercent}% Used`;
 
     const gridHtml = Object.entries(config.memKeys).map(([key, label]) => `
         <div class="bg-[#161b22] border border-gray-800 p-4 rounded-xl transition-colors hover:border-gray-600">
@@ -98,45 +127,36 @@ function renderServices(services) {
 
 // 命令发送
 async function sendCmd(service, action, button) {
-    const fileInput = document.getElementById('token-file');
-    const tokenFile = fileInput.files[0];
-
-    if (!tokenFile) {
-        alert("未选择操作令牌文件!");
-        return;
-    }
     if (button) button.disabled = true;
 
     try {
-        const RSAKey = await tokenFile.text();
-        const token = getToken(RSAKey);
-        if (!token) throw new Error("Token 加密失败，请检查 RSA 密钥格式。");
+        const token = getToken(appBridge.readSecureFile(id + '.pem'));
+        if (!token) throw new Error("Token 加密失败，请检查密钥文件!");
 
         const fd = new FormData();
         fd.append('service', service);
         fd.append('action', action);
 
-        const res = await fetch(config.controlPath, {
+        const res = await fetch(config.controlURL, {
             method: 'POST',
             headers: { 'token': token },
             body: fd
         });
 
         if (res.ok || res.status === 202) {
-            // 操作成功后延迟 1 秒刷新数据，给服务端留出状态变更时间
+            showMessage('指令发送成功', 'info');
+            // 延迟 1 秒刷新数据
             setTimeout(updateData, 1000);
         } else {
-            alert(`操作失败: ${res.status} ${res.statusText}`);
+            showMessage(`操作失败: ${res.status} ${res.statusText}`, 'error');
         }
     } catch (err) {
-        alert('错误: ' + err.message);
-        console.error(err);
+        showMessage('错误: ' + err.message, 'error');
     } finally {
         if (button) button.disabled = false;
     }
 }
 
-// Token 生成
 function getToken(key) {
     try {
         const now = Date.now();
@@ -151,7 +171,6 @@ function getToken(key) {
         crypt.setPublicKey(key);
         return crypt.encrypt(tokenText);
     } catch (e) {
-        console.error('Encryption failed: ' + e);
         return null;
     }
 }

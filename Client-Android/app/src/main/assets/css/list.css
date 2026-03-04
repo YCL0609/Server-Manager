@@ -1,0 +1,156 @@
+body {
+    background-color: #0a0a0a;
+    color: #d1d1d1;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding-top: 40px;
+}
+
+.container {
+    width: 380px;
+    background-color: #161616;
+    padding: 24px;
+    border-radius: 20px;
+    border: 1px solid #222;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+h3 {
+    color: #03dac6;
+    margin: 0 0 20px 0;
+    text-align: center;
+    font-weight: 300;
+}
+
+#inputSection {
+    display: none;
+    background-color: #1e1e1e;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #333;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+input {
+    background-color: #0f0f0f;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 12px;
+    border-radius: 8px;
+    outline: none;
+    transition: 0.2s;
+}
+
+input:focus {
+    border-color: #03dac6;
+    background-color: #121212;
+}
+
+input[type="file"] {
+    padding: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+    background-color: #333;
+    color: #03dac6;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-right: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background-color: #444;
+}
+
+#addError {
+    margin: 0 auto;
+}
+
+.button-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn-add {
+    background-color: #bb86fc;
+    color: #000;
+}
+
+.btn-confirm {
+    background-color: #03dac6;
+    color: #000;
+    margin-top: 5px;
+}
+
+.btn-del {
+    background-color: #2c2c2c;
+    color: #cf6679;
+    border: 1px solid #cf6679;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button:hover {
+    filter: brightness(1.1);
+}
+
+#cardList {
+    max-height: 350px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.card {
+    background-color: #222;
+    padding: 18px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card.selected {
+    border-color: #03dac6;
+    background-color: #2a2a2a;
+    box-shadow: 0 0 15px rgba(3, 218, 198, 0.2);
+}
+
+.card-name {
+    font-size: 1.05rem;
+    font-weight: 500;
+}
+
+#cardList::-webkit-scrollbar {
+    width: 4px;
+}
+
+#cardList::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 10px;
+}

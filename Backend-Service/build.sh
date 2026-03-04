@@ -1,9 +1,18 @@
 #!/bin/sh
+set -e
 echo ">>> 初始化输出目录..."
 rm -rf ./out
 mkdir -p out
+echo ">>> 使用 esbuild 预打包 JS 模块..."
+npx esbuild main.js --bundle \
+  --minify \
+  --platform=node \
+  --format=esm \
+  --external:qjs:std \
+  --external:qjs:os \
+  --outfile=out/server-manager.js
 echo ">>> 打包JS并生成C代码..."
-./bin/qjsc -e -o out/server-manager.c main.js
+./bin/qjsc -e -o out/server-manager.c out/server-manager.js
 du -h ./out/server-manager.c
 echo ">>> 生成可执行文件..."
 musl-gcc -Os -flto -D_GNU_SOURCE -static \

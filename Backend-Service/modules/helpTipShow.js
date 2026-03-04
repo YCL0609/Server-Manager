@@ -1,5 +1,6 @@
-import { exec } from "../lib/runCmd.js";
-import { lang, version } from "../lib/init.js";
+import * as std from 'qjs:std';
+import { exec } from '../lib/runCmd.js';
+import { lang, version } from '../lib/init.js';
 
 export class helpTipShow {
     static all() {
@@ -18,5 +19,6 @@ export class helpTipShow {
         print(`\n${i18n.permission}:`);
         print(`  ${i18n.permDetal}:`);
         print('  ' + user + ' ALL=(ALL) NOPASSWD: /usr/bin/systemctl start *, /usr/bin/systemctl stop *, /usr/bin/systemctl restart *');
+        std.exit(0);
     }
 }

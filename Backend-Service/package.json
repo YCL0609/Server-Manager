@@ -1,0 +1,6 @@
+{
+  "name": "server-manager-backend-service",
+  "devDependencies": {
+    "esbuild": "^0.27.3"
+  }
+}

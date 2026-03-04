@@ -11,11 +11,13 @@ date_str=$(date +"%Y-%m-%d %H:%M")
 # 生成 key.php 文件
 cat <<EOF > key.php
 <?php
-\$KeyRaw = "$(cat key_private.pem)";
+\$KeyRaw = <<<'EOT'
+$(cat key_private.pem)
+EOT;
 
 /*** 密钥修改日期: $date_str (UTC${offset:0:3}) ***/
 
-\$RSAKey = openssl_pkey_get_public(\$KeyRaw);
+\$RSAKey = openssl_pkey_get_private(\$KeyRaw);
 EOF
 
 # 删除对应的 pem 文件

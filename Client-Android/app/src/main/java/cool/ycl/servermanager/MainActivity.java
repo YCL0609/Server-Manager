@@ -6,33 +6,30 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.webkit.WebViewAssetLoader; // 需要引入
 
 public class MainActivity extends AppCompatActivity {
 
-    private ValueCallback<Uri[]> mUploadMessage; // 用于处理文件选择的回调
+    private ValueCallback<Uri[]> mUploadMessage;
 
-    // 启动文件选择器
     private final ActivityResultLauncher<Intent> mFileChooserLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                if (mUploadMessage == null) {
-                    return;
-                }
+                if (mUploadMessage == null) return;
                 Uri[] results = null;
-                if (result.getResultCode() == AppCompatActivity.RESULT_OK) {
-                    if (result.getData() != null) {
-                        String dataString = result.getData().getDataString();
-                        if (dataString != null) {
-                            results = new Uri[]{Uri.parse(dataString)};
-                        }
-                    }
+                if (result.getResultCode() == AppCompatActivity.RESULT_OK && result.getData() != null) {
+                    String dataString = result.getData().getDataString();
+                    if (dataString != null) results = new Uri[]{Uri.parse(dataString)};
                 }
                 mUploadMessage.onReceiveValue(results);
                 mUploadMessage = null;
@@ -43,27 +40,44 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
         WebView wv = findViewById(R.id.webview);
 
-        // 设置WebView属性
+        // 配置虚拟域名映射
+        final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
+                .setDomain("appassets.androidplatform.net")
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .build();
+
         WebSettings webSettings = wv.getSettings();
-        webSettings.setUseWideViewPort(true);
         webSettings.setLoadWithOverviewMode(true);
         webSettings.setAllowContentAccess(false);
+        webSettings.setAllowFileAccess(false);
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
 
-        // 更新UserAgent
         String userAgent = webSettings.getUserAgentString();
-        String extUA = " ServerManager/0.4";
-        webSettings.setUserAgentString(userAgent + extUA);
+        webSettings.setUserAgentString(userAgent + " ServerManager/0.6");
+
+        wv.setWebViewClient(new WebViewClient() {
+            // 转发虚拟域名请求
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                return assetLoader.shouldInterceptRequest(request.getUrl());
+            }
+
+            // 拦截外部链接
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String url = request.getUrl().toString();
+                return !url.startsWith("https://appassets.androidplatform.net/");
+            }
+        });
 
         wv.setWebChromeClient(new WebChromeClient() {
-            @Override // 文件选择框
+            @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-                if (mUploadMessage != null) {
-                    mUploadMessage.onReceiveValue(null);
-                }
+                if (mUploadMessage != null) mUploadMessage.onReceiveValue(null);
                 mUploadMessage = filePathCallback;
                 Intent intent = fileChooserParams.createIntent();
                 try {
@@ -76,28 +90,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // 接口注入
-        wv.addJavascriptInterface(new WebAppInterface(this), "app");
-
-        // 加载网页
-        wv.loadUrl("file:///android_asset/index.html");
-
-        // 拦截外部网页请求
-        wv.setWebViewClient(new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
-                String url = request.getUrl().toString();
-                if (url.startsWith("https://server0.ycl.cool")) {
-                    WebView webView = findViewById(R.id.webview);
-                    webView.loadUrl(url);
-                    return true;
-                }
-                return true;
-            }
-        });
+        wv.addJavascriptInterface(new WebAppInterface(this), "appBridge");
+        wv.loadUrl("https://appassets.androidplatform.net/assets/list.html");
     }
 
-    @Override // 防止屏幕尺寸改变导致页面重载
+    @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
     }

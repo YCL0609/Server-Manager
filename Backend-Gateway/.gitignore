@@ -1,4 +1,3 @@
 # 忽略临时文件
 *.pem
-*.zip
 key.php

@@ -1,10 +1,12 @@
+node_modules/
+
 # 忽略quickjs-ng仓库
 bin/
 bin
 
+# 移除测试数据
+service.json
+system.json
+
 # 忽略输出文件
 out/
-
-# 忽略临时文件
-*.json
-*.zip

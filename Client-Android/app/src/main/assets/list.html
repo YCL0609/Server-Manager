@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <link rel="stylesheet" href="./css/list.css">
+    <link rel="stylesheet" href="./css/note.css">
+    <script src="./js/function.js"></script>
+    <title>Server List</title>
+</head>
+
+<body>
+    <div class="container">
+        <h3>服务器列表</h3>
+
+        <div id="inputSection">
+            <div class="input-group">
+                <a>服务器别名:</a>
+                <input type="text" id="name" placeholder="Server Name">
+                <a>数据URL路径:</a>
+                <input type="url" id="dataUrl" placeholder="https://example.org/svrmgr/data/">
+                <a>API URL路径:</a>
+                <input type="url" id="apiUrl" placeholder="https://example.org/svrmgr/control.php">
+                <a>刷新间隔 (单位: ms):</a>
+                <input type="number" id="interval" placeholder="1000">
+                <a>选择令牌文件:</a>
+                <input type="file" id="tokenFile" accept=".pem,*.*">
+                <button class="btn-confirm">添加</button>
+            </div>
+        </div>
+
+        <div id="cardList">
+        </div>
+
+        <div class="button-row">
+            <button class="btn-add">添加</button>
+            <button class="btn-del">删除</button>
+        </div>
+    </div>
+    <script src="./js/list.js"></script>
+</body>
+
+</html>

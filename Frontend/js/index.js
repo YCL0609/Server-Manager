@@ -1,10 +1,12 @@
 const crypt = new JSEncrypt();
 let isUpdating = false;
+let showError = true;
+let errorId = '';
 const cache = { sysRes: '', srvRes: '' };
 const config = {
-    serverURL: '',
-    controlPath: 'index.php',
-    interval: 3000,
+    serverURL: 'http://192.168.232.130/data/',
+    controlURL: 'http://192.168.232.130/control/index.php',
+    interval: 60000,
     memKeys: {
         MemTotal: "Total", MemAvailable: "Available", AnonPages: "App(Anon)",
         Cached: "Cached", Buffers: "Buffers", SReclaimable: "SReclaim",
@@ -12,7 +14,6 @@ const config = {
         Committed_AS: "Committed"
     }
 };
-
 
 document.addEventListener('DOMContentLoaded', () => {
     updateData();
@@ -30,6 +31,7 @@ async function updateData() {
             fetch(config.serverURL + 'service.json').then(r => r.json())
         ]);
 
+        // 缓存判断
         if (cache.sysRes !== sysRes) {
             renderCPU(sysRes.cpu);
             renderMemory(sysRes.memory);
@@ -39,8 +41,14 @@ async function updateData() {
             renderServices(srvRes.services);
             cache.srvRes = srvRes;
         }
+
+        // 清理提示信息
+        closeMessage(errorId);
+        showError = true;
     } catch (e) {
-        console.error("Update error:", e);
+        console.error('Update error:', e);
+        if (showError) errorId = showMessage('无法连接服务器', 'error');
+        showError = false;
     } finally {
         isUpdating = false;
     }
@@ -101,35 +109,33 @@ async function sendCmd(service, action, button) {
     const fileInput = document.getElementById('token-file');
     const tokenFile = fileInput.files[0];
 
-    if (!tokenFile) {
-        alert("未选择操作令牌文件!");
-        return;
-    }
+    if (!tokenFile) return showMessage('未选择令牌文件!', 'warning');
     if (button) button.disabled = true;
 
     try {
         const RSAKey = await tokenFile.text();
         const token = getToken(RSAKey);
-        if (!token) throw new Error("Token 加密失败，请检查 RSA 密钥格式。");
+        if (!token) throw new Error("Token 加密失败，请检查密钥文件!");
 
         const fd = new FormData();
         fd.append('service', service);
         fd.append('action', action);
 
-        const res = await fetch(config.serverURL + config.controlPath, {
+        const res = await fetch(config.controlURL, {
             method: 'POST',
             headers: { 'token': token },
             body: fd
         });
 
         if (res.ok || res.status === 202) {
-            // 操作成功后延迟 1 秒刷新数据，给服务端留出状态变更时间
+            showMessage('指令发送成功', 'info');
+            // 延迟 1 秒刷新数据
             setTimeout(updateData, 1000);
         } else {
-            alert(`操作失败: ${res.status} ${res.statusText}`);
+            showMessage(`操作失败: ${res.status} ${res.statusText}`, 'error');
         }
     } catch (err) {
-        alert('错误: ' + err.message);
+        showMessage('错误: ' + err.message, 'error');
         console.error(err);
     } finally {
         if (button) button.disabled = false;

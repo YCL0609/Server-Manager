@@ -30,7 +30,7 @@ export function dirCheck(path) {
     for (const segment of segments) {
         // 合法性检查
         if (!isSegmentSafe(segment)) {
-            console.error(`${lang.dirCheck.illegalPath}: "${segment}"`);
+            console.error(`${lang.dirCheck.illegalPath}: '${segment}'`);
             return 14; // EFAULT
         }
 
