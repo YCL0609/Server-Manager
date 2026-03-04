@@ -1,7 +1,8 @@
 import * as std from 'qjs:std';
 import * as os from 'qjs:os';
-import { lang, console, getLockFile } from '../lib/init.js';
-import { exec } from '../lib/runCmd.js';
+import { lang, console } from '../libs/init.js';
+import { getLockFile } from '../libs/getLockFile.js';
+import { exec } from '../libs/runCmd.js';
 export const version = '0.7'; // 程序版本
 
 export class Daemon {
@@ -72,8 +73,9 @@ export class Daemon {
         }
 
         // 清理临时文件
-        os.remove('/dev/shm/servicesControlPipe');
-        exec('rm -rf /dev/shm/Server-Manager');
+        exec('rm -f /run/server-manager/*.lock');
+        os.remove('/run/server-manager/servicesControlPipe');
+        exec('rm -f /dev/shm/Server-Manager/*.json');
         std.exit(0);
     }
 }

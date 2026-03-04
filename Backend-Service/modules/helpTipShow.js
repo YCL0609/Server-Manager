@@ -1,6 +1,6 @@
 import * as std from 'qjs:std';
-import { exec } from '../lib/runCmd.js';
-import { lang, version } from '../lib/init.js';
+import { exec } from '../libs/runCmd.js';
+import { lang, version } from '../libs/init.js';
 
 export class helpTipShow {
     static all() {

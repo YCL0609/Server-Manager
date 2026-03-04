@@ -54,10 +54,10 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setAllowContentAccess(false);
         webSettings.setAllowFileAccess(false);
         webSettings.setJavaScriptEnabled(true);
-        webSettings.setDomStorageEnabled(true);
+        webSettings.setDomStorageEnabled(false);
 
         String userAgent = webSettings.getUserAgentString();
-        webSettings.setUserAgentString(userAgent + " ServerManager/0.6");
+        webSettings.setUserAgentString(userAgent + " ServerManager/1.0");
 
         wv.setWebViewClient(new WebViewClient() {
             // 转发虚拟域名请求
@@ -94,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
         wv.loadUrl("https://appassets.androidplatform.net/assets/list.html");
     }
 
+    // 防止屏幕变换时刷新
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);

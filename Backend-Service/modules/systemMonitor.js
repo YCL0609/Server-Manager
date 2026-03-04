@@ -1,8 +1,9 @@
 import * as os from 'qjs:os';
 import * as std from 'qjs:std';
-import { dirCheck } from '../lib/dirCheck.js';
-import { writeFile } from '../lib/writeFile.js';
-import { console, lang, config, getLockFile } from '../lib/init.js';
+import { dirCheck } from '../libs/dirCheck.js';
+import { writeFile } from '../libs/writeFile.js';
+import { getLockFile } from '../libs/getLockFile.js';
+import { console, lang, config } from '../libs/init.js';
 
 export class systemMonitor {
     #enabled = false;

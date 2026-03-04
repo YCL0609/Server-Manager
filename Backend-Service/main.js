@@ -1,7 +1,7 @@
 import * as std from 'qjs:std';
 import { Daemon } from './modules/daemon.js';
 import { helpTipShow } from './modules/helpTipShow.js';
-import { console, isShowHelp, lang } from './lib/init.js';
+import { console, isShowHelp, lang } from './libs/init.js';
 import { systemMonitor } from './modules/systemMonitor.js';
 import { serviceMonitor } from './modules/serviceMonitor.js';
 import { serviceControl } from './modules/serviceControl.js';

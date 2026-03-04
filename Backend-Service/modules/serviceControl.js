@@ -1,8 +1,9 @@
 import * as os from 'qjs:os';
 import * as std from 'qjs:std';
-import { exec } from '../lib/runCmd.js';
-import { lang, console, config, getLockFile } from '../lib/init.js';
-const ctrlPipe = '/dev/shm/servicesControlPipe';
+import { exec } from '../libs/runCmd.js';
+import { getLockFile } from '../libs/getLockFile.js';
+import { lang, console, config } from '../libs/init.js';
+const ctrlPipe = '/run/server-manager/servicesControlPipe';
 
 export class serviceControl {
     #services = [];
@@ -21,6 +22,7 @@ export class serviceControl {
 
         // 加载配置
         const enabled = config.srvControl?.enable ?? false;
+        const pipeGrep = config.srvControl?.pipegroup ?? '[USER]'
         this.#services = config.srvControl?.services ?? [];
         if (!enabled || this.#services.length === 0) std.exit(0);
 
@@ -51,15 +53,49 @@ export class serviceControl {
             std.exit(5); // EIO
         }
 
-        // 获取监控进程PID
-        const pid = std.loadFile('/dev/shm/Server-Manager/service.lock');
-        if (pid === null || pid < 0) {
-            console.warn(lang.SvrControl.pidGetErr);
-        } else if (os.kill(pid, 0) !== 0) {
-            console.warn(lang.SvrControl.pidGetErr);
-        } else {
-            this.#monitorPID = pid;
+        // 设置所属组
+        const user = exec('whoami').output ?? '[USER]';
+        if (user !== pipeGrep && user !== '[USER]' && pipeGrep !== '[USER]') {
+            // 防注入攻击
+            const allow = /^[a-z_][a-z0-9_-]{0,31}$/;
+            if (!allow.test(pipeGrep)) {
+                console.error(lang.SvrControl.ctrlFileErr);
+                std.exit(5); // EIO
+            }
+
+            // 切换文件所属组
+            const chgrp = exec(`chgrp ${pipeGrep} ${ctrlPipe}`);
+            if (chgrp.exitCode !== 0) {
+                console.error(lang.SvrControl.ctrlFileErr);
+                std.exit(5); // EIO
+            }
         }
+
+        // 获取监控进程PID
+        this.#monitorPID = (() => {
+            let count = 0;
+            while (count < 5) {
+                const txt = std.loadFile('/dev/shm/Server-Manager/service.lock');
+
+                // 如果文件读取成功
+                if (txt !== null) {
+                    const pid = parseInt(txt.trim());
+                    // 校验 PID 是否有效且进程是否存活
+                    if (!isNaN(pid) && pid > 0 && os.kill(pid, 0) === 0) {
+                        return pid;
+                    }
+                }
+
+                // 如果失败，等待 200ms 后重试
+                count++;
+                if (count < 5) {
+                    os.sleep(200); // 重要：给对方进程一点写入的时间
+                }
+            }
+
+            console.warn(lang.SvrControl.pidGetErr);
+            return 0;
+        })();
 
         // 启动异步监听循环
         this.#listenLoop();

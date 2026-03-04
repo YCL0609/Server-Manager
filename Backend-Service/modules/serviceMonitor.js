@@ -1,9 +1,10 @@
 import * as os from 'qjs:os';
 import * as std from 'qjs:std';
-import { exec } from '../lib/runCmd.js';
-import { dirCheck } from '../lib/dirCheck.js';
-import { writeFile } from '../lib/writeFile.js';
-import { lang, console, config, getLockFile } from '../lib/init.js';
+import { exec } from '../libs/runCmd.js';
+import { dirCheck } from '../libs/dirCheck.js';
+import { writeFile } from '../libs/writeFile.js';
+import { getLockFile } from '../libs/getLockFile.js';
+import { lang, console, config } from '../libs/init.js';
 
 export class serviceMonitor {
     #enabled = false;

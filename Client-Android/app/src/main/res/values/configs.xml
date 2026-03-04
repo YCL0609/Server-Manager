@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- 仅保留中文和英文资源 -->
+    <string-array name="supported_languages" tools:ignore="UnusedResources">
+        <item>en</item>
+        <item>zh</item>
+    </string-array>
+</resources>

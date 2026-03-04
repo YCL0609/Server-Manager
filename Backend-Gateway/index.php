@@ -1,8 +1,13 @@
 <?php
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: https://appassets.androidplatform.net");
 header("Access-Control-Allow-Headers: token");
-header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Methods: OPTIONS, POST");
 header("Cache-Control: no-store, no-cache, must-revalidate");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit();
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -60,7 +65,7 @@ if (!in_array($action, $allowAct)) {
 }
 
 try {
-    $pipe = fopen('/dev/shm/servicesControlPipe', 'w');
+    $pipe = fopen('/run/server-manager/servicesControlPipe', 'w');
     if (!$pipe) throw new Exception();
     fwrite($pipe, 'srvControl|' . time() . '000|' . $serviceName . '|' . $action . "\n");
     fclose($pipe);

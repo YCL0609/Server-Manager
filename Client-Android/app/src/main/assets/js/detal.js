@@ -1,6 +1,7 @@
 let id = null;
 let errorId = null;
 let isUpdating = false;
+let lang = (navigator.language || navigator.userLanguage).slice(0, 2);
 const crypt = new JSEncrypt();
 const cache = { sysRes: '', srvRes: '' };
 const config = {
@@ -14,20 +15,62 @@ const config = {
         Committed_AS: "Committed"
     }
 };
+const langRaw = {
+    list: [
+        'zh',
+        'en'
+    ],
+    zh: {
+        cpuTip: 'CPU 负载',
+        min1: '1 分钟内',
+        min5: '5 分钟内',
+        min15: '15 分钟内',
+        mem: '内存负载',
+        controlTip: '服务控制',
+        token: '操作令牌:',
+        error: {
+            connect: '无法连接服务器',
+            success: '指令发送成功',
+            read: '无法读取本地数据',
+            data: '本地数据格式错误'
+        }
+    },
+    en: {
+        cpuTip: 'CPU Load',
+        min1: '1 minute',
+        min5: '5 minutes',
+        min15: '15 minutes',
+        mem: 'Memory Load',
+        controlTip: 'Service Control',
+        token: 'Operation Token:',
+        error: {
+            connect: 'Unable to connect to the server',
+            success: 'Command sent successfully',
+            read: 'Unable to read local data',
+            data: 'Local data format error'
+        }
+    }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
+    // 页面语言切换
+    lang = langRaw.list.includes(lang) ? lang : 'en';
+    if (langRaw.list.includes(lang) && lang !== 'zh') {
+        document.querySelectorAll('[data-langId]').forEach(e => e.innerText = langRaw[lang][e.dataset.langid]);
+    }
+
+    // 读取配置
     const listRaw = appBridge.readFile('list.json', 'err');
-    if (listRaw === 'err') return showMessage('无法读取本地数据', 'error');
+    if (listRaw === 'err') return showMessage(langRaw[lang].error.read, 'error');
     const serverList = JSON.parse(listRaw);
     const params = new URLSearchParams(window.location.search);
     id = params.get('id');
-    if (!serverList[id]) return showMessage('本地数据格式错误', 'error')
+    if (!serverList[id]) return showMessage(langRaw[lang].error.data, 'error')
     config.serverURL = serverList[id].data;
     config.controlURL = serverList[id].api;
     config.interval = serverList[id].interval
-})
 
-document.addEventListener('DOMContentLoaded', () => {
+    // 更新数据
     updateData();
     setInterval(updateData, config.interval);
 });
@@ -60,7 +103,7 @@ async function updateData() {
         }
         showError = true;
     } catch (e) {
-        if (errorId !== null) errorId = showMessage('服务器连接错误\n' + e.message, 'error');
+        if (errorId !== null) errorId = showMessage(langRaw[lang].error.connect, 'error');
     } finally {
         isUpdating = false;
     }
@@ -131,7 +174,7 @@ async function sendCmd(service, action, button) {
 
     try {
         const token = getToken(appBridge.readSecureFile(id + '.pem'));
-        if (!token) throw new Error("Token 加密失败，请检查密钥文件!");
+        if (!token) throw new Error(langRaw[lang].error.read);
 
         const fd = new FormData();
         fd.append('service', service);
@@ -144,14 +187,14 @@ async function sendCmd(service, action, button) {
         });
 
         if (res.ok || res.status === 202) {
-            showMessage('指令发送成功', 'info');
+            showMessage(langRaw[lang].error.success, 'info');
             // 延迟 1 秒刷新数据
             setTimeout(updateData, 1000);
         } else {
-            showMessage(`操作失败: ${res.status} ${res.statusText}`, 'error');
+            showMessage('HTTP ' + res.status + res.statusText, 'error');
         }
     } catch (err) {
-        showMessage('错误: ' + err.message, 'error');
+        showMessage('Error: ' + err.message, 'error');
     } finally {
         if (button) button.disabled = false;
     }

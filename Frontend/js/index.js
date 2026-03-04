@@ -1,11 +1,12 @@
-const crypt = new JSEncrypt();
 let isUpdating = false;
 let showError = true;
 let errorId = '';
+let lang = (navigator.language || navigator.userLanguage).slice(0, 2);
+const crypt = new JSEncrypt();
 const cache = { sysRes: '', srvRes: '' };
 const config = {
-    serverURL: 'http://192.168.232.130/data/',
-    controlURL: 'http://192.168.232.130/control/index.php',
+    serverURL: './data/',
+    controlURL: './control/index.php',
     interval: 60000,
     memKeys: {
         MemTotal: "Total", MemAvailable: "Available", AnonPages: "App(Anon)",
@@ -14,8 +15,51 @@ const config = {
         Committed_AS: "Committed"
     }
 };
+const langRaw = {
+    list: [
+        'zh',
+        'en'
+    ],
+    zh: {
+        cpuTip: 'CPU 负载',
+        min1: '1 分钟内',
+        min5: '5 分钟内',
+        min15: '15 分钟内',
+        mem: '内存负载',
+        controlTip: '服务控制',
+        token: '操作令牌:',
+        error: {
+            connect: '无法连接服务器',
+            noToken: '请选择令牌文件',
+            tokenErr: 'Token 加密失败，请检查令牌文件!',
+            success: '指令发送成功'
+        }
+    },
+    en: {
+        cpuTip: 'CPU Load',
+        min1: '1 minute',
+        min5: '5 minutes',
+        min15: '15 minutes',
+        mem: 'Memory Load',
+        controlTip: 'Service Control',
+        token: 'Operation Token:',
+        error: {
+            connect: 'Unable to connect to the server',
+            noToken: 'Please select a token file',
+            tokenErr: 'Token encryption failed, please check the token file!',
+            success: 'Command sent successfully'
+        }
+    }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
+    // 页面语言切换
+    lang = langRaw.list.includes(lang) ? lang : 'en';
+    if (langRaw.list.includes(lang) && lang !== 'zh') {
+        document.querySelectorAll('[data-langId]').forEach(e => e.innerText = langRaw[lang][e.dataset.langid]);
+    }
+
+    //数据更新
     updateData();
     setInterval(updateData, config.interval);
 });
@@ -47,7 +91,7 @@ async function updateData() {
         showError = true;
     } catch (e) {
         console.error('Update error:', e);
-        if (showError) errorId = showMessage('无法连接服务器', 'error');
+        if (showError) errorId = showMessage(langRaw[lang].error.connect, 'error');
         showError = false;
     } finally {
         isUpdating = false;
@@ -109,13 +153,13 @@ async function sendCmd(service, action, button) {
     const fileInput = document.getElementById('token-file');
     const tokenFile = fileInput.files[0];
 
-    if (!tokenFile) return showMessage('未选择令牌文件!', 'warning');
+    if (!tokenFile) return showMessage(langRaw[lang].error.noToken, 'warning');
     if (button) button.disabled = true;
 
     try {
         const RSAKey = await tokenFile.text();
         const token = getToken(RSAKey);
-        if (!token) throw new Error("Token 加密失败，请检查密钥文件!");
+        if (!token) throw new Error(langRaw[lang].error.tokenErr);
 
         const fd = new FormData();
         fd.append('service', service);
@@ -128,14 +172,14 @@ async function sendCmd(service, action, button) {
         });
 
         if (res.ok || res.status === 202) {
-            showMessage('指令发送成功', 'info');
-            // 延迟 1 秒刷新数据
-            setTimeout(updateData, 1000);
+            showMessage(langRaw[lang].error.success, 'info');
+            // 延迟 2 秒刷新数据
+            setTimeout(updateData, 2000);
         } else {
-            showMessage(`操作失败: ${res.status} ${res.statusText}`, 'error');
+            showMessage('HTTP ' + res.status + res.statusText, 'error');
         }
     } catch (err) {
-        showMessage('错误: ' + err.message, 'error');
+        showMessage('Error: ' + err.message, 'error');
         console.error(err);
     } finally {
         if (button) button.disabled = false;
