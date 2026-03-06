@@ -134,10 +134,10 @@ function renderMemory(mem) {
     if (textE) textE.innerText = `${usedPercent}% Used`;
 
     const gridHtml = Object.entries(config.memKeys).map(([key, label]) => `
-        <div class="bg-[#161b22] border border-gray-800 p-4 rounded-xl transition-colors hover:border-gray-600">
-            <span class="text-[10px] text-gray-500 uppercase block mb-1 font-semibold">${label}</span>
-            <span class="text-xl font-mono text-gray-100">
-                ${(mem[key] / 1024).toFixed(0)}<span class="text-xs ml-1 text-gray-600">MB</span>
+        <div class="mem-card">
+            <span class="stat-label" style="margin-bottom: 0.25rem;">${label}</span>
+            <span class="mem-value">
+                ${(mem[key] / 1024).toFixed(0)}<span style="font-size: 0.75rem; margin-left: 0.25rem; color: var(--text-dim);">MB</span>
             </span>
         </div>
     `).join('');
@@ -149,18 +149,18 @@ function renderServices(services) {
     const newHtml = services.map(item => {
         const active = item.status.active === 'active';
         return `
-            <div class="bg-[#161b22] border border-gray-800 p-4 rounded-xl flex flex-col justify-between shadow-lg">
-                <div class="flex justify-between items-start mb-4">
-                    <div class="w-4/5">
-                        <h3 class="font-mono text-sm text-white font-bold truncate">${item.name}</h3>
-                        <p class="text-[10px] text-gray-500 mt-1 truncate">${item.status.description || ''}</p>
+            <div class="service-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="width: 85%;">
+                        <h3 style="font-family: monospace; font-size: 0.875rem; color: white; font-weight: 700;" class="truncate">${item.name}</h3>
+                        <p style="font-size: 0.625rem; color: var(--text-dim); margin-top: 0.25rem;" class="truncate">${item.status.description || ''}</p>
                     </div>
-                    <span class="w-2.5 h-2.5 rounded-full ${active ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-red-600'}"></span>
+                    <span class="status-dot ${active ? 'dot-active' : 'dot-inactive'}"></span>
                 </div>
-                <div class="flex gap-2 mt-auto">
-                    <button onclick="sendCmd('${item.name}', 'start', this)" ${active ? 'disabled' : ''} class="flex-1 text-[10px] font-bold py-2 rounded bg-[#1c2128] hover:bg-green-700 disabled:opacity-10 transition-all">启动</button>
-                    <button onclick="sendCmd('${item.name}', 'stop', this)" ${active ? '' : 'disabled'} class="flex-1 text-[10px] font-bold py-2 rounded bg-[#1c2128] hover:bg-red-700 disabled:opacity-10 transition-all">停止</button>
-                    <button onclick="sendCmd('${item.name}', 'restart', this)" class="flex-1 text-[10px] font-bold py-2 rounded bg-[#1c2128] hover:bg-blue-700 disabled:opacity-10 transition-all">重启</button>
+                <div class="btn-group">
+                    <button onclick="sendCmd('${item.name}', 'start', this)" ${active ? 'disabled' : ''} class="btn-action btn-start">启动</button>
+                    <button onclick="sendCmd('${item.name}', 'stop', this)" ${active ? '' : 'disabled'} class="btn-action btn-stop">停止</button>
+                    <button onclick="sendCmd('${item.name}', 'restart', this)" class="btn-action btn-restart">重启</button>
                 </div>
             </div>`;
     }).join('');

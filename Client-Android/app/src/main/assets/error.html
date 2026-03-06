@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebView Version Low</title>
+    <style>
+        body {
+            background-color: #0d1117;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #ff7b72;
+            margin-top: 0;
+            font-size: 20px;
+        }
+
+        p {
+            color: #8b949e;
+        }
+
+        #ua {
+            font-size: 13px;
+            color: #58a6ff;
+        }
+
+        .footer {
+            margin-top: 20px;
+            color: #484f58;
+            border-top: 1px solid #30363d;
+            padding-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>
+        系统组件版本过低<br>
+        System component version is too low</h2>
+    <p>
+        当前系统 Android WebView 内核版本较低, 应用正常运行需要 Chromium 55+ 内核。<br>
+        The current system Android WebView core version is relatively low, and normal operation of the application
+        requires Chromium 55+ core.
+    </p>
+
+    <div id="ua"></div>
+
+    <div class="footer">
+        请通过应用商店更新 <b>Android System WebView</b> 组件后重试。<br>
+        Please retry after updating the <b>Android System WebView</b> component through the app store.
+    </div>
+    <script>
+        var ua = navigator.userAgent;
+        var match = ua.match(/Chrome\/(\d+)/);
+        document.getElementById('ua').innerHTML = "<a style=\"color:#ff6\">Current version: v" + match[1] + "</a><br>User Agent: " + ua;
+    </script>
+</body>
+
+</html>

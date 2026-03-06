@@ -7,9 +7,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate");
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit();
-}
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+} elseif ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     die();
 }

@@ -4,7 +4,7 @@
 openssl genrsa -out key_private.pem 2048
 openssl rsa -in key_private.pem -pubout -out key_public.pem
 
-# 获取当前日期 (UTC-3)
+# 获取当前日期
 offset=$(date +%z)
 date_str=$(date +"%Y-%m-%d %H:%M")
 

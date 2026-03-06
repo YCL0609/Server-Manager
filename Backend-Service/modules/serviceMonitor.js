@@ -129,7 +129,6 @@ export class serviceMonitor {
 
         // 存储服务状态
         const data = {
-            timestamp: Date.now(),
             services: this.#services.map(srv => ({
                 name: srv,
                 status: svStatus[srv] || {

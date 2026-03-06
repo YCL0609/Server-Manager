@@ -1,65 +1,66 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta name="color-scheme" content="light dark">
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <link rel="stylesheet" href="./css/detal.css">
     <link rel="stylesheet" href="./css/note.css">
+    <script>
+        (function () {
+            var ua = navigator.userAgent;
+            var chromeMatch = ua.match(/Chrome\/(\d+)/);
+            if (chromeMatch && parseInt(chromeMatch[1], 10) < 55) {
+                window.location.replace('error.html');
+            }
+        })();
+    </script>
     <script src="./js/jsencrypt.min.js"></script>
     <script src="./js/function.js"></script>
     <script src="./js/detal.js"></script>
     <title>Server Manager</title>
 </head>
 
-<body class="bg-[#0d1117] text-gray-300 p-4 md:p-8 font-sans">
-    <div class="max-w-6xl mx-auto space-y-8">
+<body class="bg-body text-gray-300 font-sans antialiased">
+    <div class="container-main space-y-8">
 
         <section>
-            <h2 class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-3 px-1" data-langId="cpuTip">CPU负载</h2>
-            <div
-                class="grid grid-cols-2 md:grid-cols-4 gap-px bg-gray-800 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl">
-                <div class="bg-[#161b22] p-8 text-center">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2" data-langId="min1">1 分钟内</span>
-                    <div id="load-1" class="text-5xl lg:text-6xl font-light text-white tracking-tighter">-</div>
+            <h2 class="section-title text-blue-500" data-langId="cpuTip">CPU负载</h2>
+            <div class="cpu-grid shadow-2xl">
+                <div class="stat-card">
+                    <span class="stat-label" data-langId="min1">1 分钟内</span>
+                    <div id="load-1" class="stat-value text-white">-</div>
                 </div>
-                <div class="bg-[#161b22] p-8 text-center">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2" data-langId="min5">5 分钟内</span>
-                    <div id="load-5" class="text-5xl lg:text-6xl font-light text-white tracking-tighter">-</div>
+                <div class="stat-card">
+                    <span class="stat-label" data-langId="min5">5 分钟内</span>
+                    <div id="load-5" class="stat-value text-white">-</div>
                 </div>
-                <div class="bg-[#161b22] p-8 text-center">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2" data-langId="min15">15 分钟内</span>
-                    <div id="load-15" class="text-5xl lg:text-6xl font-light text-white tracking-tighter">-</div>
+                <div class="stat-card">
+                    <span class="stat-label" data-langId="min15">15 分钟内</span>
+                    <div id="load-15" class="stat-value text-white">-</div>
                 </div>
-                <div class="bg-[#161b22] p-8 text-center">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">Tasks (A/T)</span>
-                    <div id="load-tasks"
-                        class="text-5xl lg:text-6xl font-light text-blue-400 tracking-tighter font-mono">-</div>
+                <div class="stat-card">
+                    <span class="stat-label">Tasks (A/T)</span>
+                    <div id="load-tasks" class="stat-value text-blue-400 font-mono">-</div>
                 </div>
             </div>
         </section>
 
         <section>
-            <div class="flex justify-between items-end mb-3 px-1">
-                <h2 class="text-xs font-bold text-green-500 uppercase tracking-widest" data-langId="mem">内存负载</h2>
-                <div id="mem-usage-text" class="text-2xl font-light text-white font-mono">-% Used</div>
+            <div class="section-header">
+                <h2 class="section-title text-green-500" data-langId="mem">内存负载</h2>
+                <div id="mem-usage-text" class="usage-text">-% Used</div>
             </div>
-            <div id="mem-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div id="mem-grid" class="mem-grid">
             </div>
         </section>
 
         <section>
-            <div class="flex flex-col md:flex-row md:items-center justify-between mb-3 px-1 gap-4">
-                <h2 class="text-xs font-bold text-purple-500 uppercase tracking-widest"  data-langId="controlTip">服务控制</h2>
-                <!-- <div class="flex items-center gap-2">
-                    <label class="text-[10px] text-gray-500 uppercase font-bold">操作令牌:</label>
-                    <input type="file" id="token-file" accept="*.pem,*.*"
-                        class="text-xs text-gray-400 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-purple-600/10 file:text-purple-500 hover:file:bg-purple-600/20 cursor-pointer">
-                </div> -->
+            <div class="section-header">
+                <h2 class="section-title text-purple-500" data-langId="controlTip">服务控制</h2>
             </div>
-            <div id="service-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div id="service-grid" class="service-grid">
             </div>
         </section>
     </div>

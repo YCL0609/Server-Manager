@@ -114,7 +114,7 @@ export class systemMonitor {
         };
 
         // 写入临时文件
-        if (!writeFile('/dev/shm/Server-Manager/system.json.tmp', JSON.stringify({ timestamp: Date.now(), cpu: cpuInfo, memory: memObject }), 'w')) {
+        if (!writeFile('/dev/shm/Server-Manager/system.json.tmp', JSON.stringify({ cpu: cpuInfo, memory: memObject }), 'w')) {
             console.warn('SystemMonitor():', lang.public.writeFileErr);
             this.#errorCount++;
             if (this.#errorCount > 10) {
